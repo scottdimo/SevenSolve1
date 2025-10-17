@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SevenSolve — a 7-letter Word Deduction</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #0b1220;
+      --muted: #5b6375;
+      --panel: #f4f6fb;
+      --border: rgba(11,18,32,0.12);
+      --accent: #3a57ff;
+      --good: #22c55e;
+      --bad: #6b7280;
+      --warning: #f59e0b;
+      --ring: rgba(58,87,255,0.2);
+      --tile: #eef2ff;
+      --tile-alt: #e9eef9;
+      --success-bg: #e8f9f0;
+      --success-ink: #065f46;
+      --notice-bg: #eef2ff;
+      --notice-ink: #2433a0;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1220;
+      --ink: #e9ecff;
+      --muted: #94a3b8;
+      --panel: #14182a;
+      --border: rgba(255,255,255,0.12);
+      --accent: #7c9cff;
+      --good: #4ade80;
+      --bad: #64748b;
+      --warning: #fbbf24;
+      --ring: rgba(124,156,255,0.35);
+      --tile: #0d1122;
+      --tile-alt: #0f1328;
+      --success-bg: #0d1f1a;
+      --success-ink: #6ee7b7;
+      --notice-bg: #0d132d;
+      --notice-ink: #a9b7ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      padding: 24px;
+    }
+    .app {
+      width: 100%;
+      max-width: 980px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.3px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 700;
+    }
+    .tag {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .toggle, .group {
+      display: inline-flex; gap: 8px; align-items: center;
+      background: var(--tile); border: 1px solid var(--border);
+      padding: 8px 10px; border-radius: 10px; font-size: 13px; color: var(--muted);
+      user-select: none;
+    }
+    .notice {
+      width: 100%;
+      background: var(--notice-bg);
+      color: var(--notice-ink);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: var(--tile);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      transition: 0.15s ease;
+    }
+    button:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring) inset; }
+    button.primary { background: linear-gradient(180deg, #4f63ff, #546dff); color: #fff; border-color: transparent; }
+    button.primary:hover { filter: brightness(1.05); }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 8px; }
+    .panel { background: var(--tile-alt); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .section-title { margin: 0 0 10px 0; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
+    .row { display: grid; grid-template-columns: 160px 1fr; gap: 10px; align-items: center; margin-top: 6px; }
+    .row label { color: var(--muted); font-size: 14px; }
+    input[type="text"] {
+      width: 100%; padding: 12px 12px; background: var(--bg); color: var(--ink);
+      border: 1px solid var(--border); border-radius: 10px; outline: none; font-size: 16px;
+      letter-spacing: 2px; text-transform: uppercase;
+      transition: box-shadow .2s ease, transform .08s ease;
+    }
+    input[type="text"]:focus { box-shadow: 0 0 0 3px var(--ring); border-color: var(--accent); transform: translateY(-1px); }
+    .history { display: grid; gap: 8px; }
+    .guess-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; letter-spacing: 2px; text-transform: uppercase; animation: pop .18s ease; }
+    .badge { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+    .pill { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); letter-spacing: 1px; display: inline-flex; gap: 6px; align-items: center; position: relative; }
+    .circ { width: 18px; height: 18px; border-radius: 999px; border: 2px solid var(--good); display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; }
+    .x { width: 18px; height: 18px; border-radius: 3px; background: var(--bad); display: inline-block; position: relative; }
+    .x::before, .x::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; background: var(--bg); transform-origin: center; }
+    .x::before { transform: translate(-50%, -50%) rotate(45deg); }
+    .x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
+    .status { margin-top: 6px; color: var(--muted); min-height: 20px; }
+    .letters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .letters .tile { position: relative; width: 36px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-weight: 800; letter-spacing: 1px; transition: transform .08s ease; }
+    .letters .tile.dim { opacity: 0.4; }
+    .letters .tile.bad { border-color: rgba(255,0,0,0.35); box-shadow: inset 0 0 0 2px rgba(255,0,0,0.12); }
+    .letters .tile.slash::after { content: ""; position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: currentColor; transform: rotate(-24deg); }
+    .letters .tile.bump { transform: scale(1.06); }
+    .footer { margin-top: 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+    .hidden { display: none !important; }
+    .success { color: var(--good); }
+    .warning { color: var(--warning); }
+    .rowtitle { font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .slots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px; }
+    .slot { position: relative; height: 54px; display: grid; place-items: center; border-radius: 10px; background: var(--bg); border: 1px dashed var(--border); }
+    .slot input { width: 100%; height: 100%; background: transparent; color: var(--ink); border: none; outline: none; text-align: center; font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+    .slot input:disabled { opacity: 0.5; }
+    .slot .line { position: absolute; bottom: 8px; left: 10%; right: 10%; height: 2px; background: var(--ink); opacity: 0.3; }
+    .shake { animation: shake .25s ease; }
+    .overlay {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      background: radial-gradient(900px 600px at 50% -10%, rgba(0,0,0,0.15), rgba(0,0,0,0.55));
+      pointer-events: none; opacity: 0; transition: opacity .25s ease;
+    }
+    .overlay.show { opacity: 1; pointer-events: auto; }
+    .toast {
+      background: var(--success-bg); color: var(--success-ink);
+      border: 1px solid var(--good); padding: 20px 18px; border-radius: 14px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25); min-width: 320px; text-align: center;
+      animation: pop .22s ease;
+    }
+    .toast h2 { margin: 0 0 6px 0; font-size: 22px; }
+    .toast p { margin: 0; font-size: 14px; color: inherit; opacity: .9; }
+    .confetti { position: absolute; width: 8px; height: 14px; border-radius: 2px; top: -10px; opacity: .9; }
+    @keyframes pop { from{ transform: scale(.96); opacity:.0; } to{ transform: scale(1); opacity:1; } }
+    @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+    @keyframes shake { 0%{ transform: translateX(0);} 25%{ transform: translateX(-3px);} 50%{ transform: translateX(3px);} 75%{ transform: translateX(-2px);} 100%{ transform: translateX(0);} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>SevenSolve <span class="tag">prototype</span></h1>
+      <div class="controls">
+        <button id="newGame">New Game</button>
+        <button id="reveal">Reveal</button>
+        <label class="toggle" title="Switch light/dark">
+          <input type="checkbox" id="themeToggle"/>
+          Dark mode
+        </label>
+        <label class="group" title="Feedback style">
+          Mode:
+          <select id="modeSelect">
+            <option value="standard" selected>Standard</option>
+            <option value="insane">Insane</option>
+          </select>
+        </label>
+        <label class="group" title="Rounds & hint limit">
+          Difficulty:
+          <select id="difficultySelect">
+            <option value="normal" selected>Normal (5 probes, ∞ hints)</option>
+            <option value="hard">Hard (4 probes, 1 hint)</option>
+          </select>
+        </label>
+        <label class="toggle" title="Rejects non-words for 3-letter probes">
+          <input type="checkbox" id="validateToggle" checked />
+          Validate probes
+        </label>
+        <label class="toggle" title="Mute/unmute sounds (M)">
+          <input type="checkbox" id="soundToggle" checked />
+          Sound on
+        </label>
+      </div>
+    </header>
+
+    <div id="modeNotice" class="notice hidden">Insane mode is ON — repeated-letter counts are hidden during probe rounds.</div>
+
+    <div class="grid">
+      <section class="panel">
+        <h3 class="section-title">Rounds 1–5: probe with 3-letter words</h3>
+        <div class="row">
+          <label for="guess3">3-letter guess</label>
+          <div style="display:flex; gap:8px; width:100%;">
+            <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off"/>
+            <button class="primary" id="submit3">Submit</button>
+          </div>
+        </div>
+        <div class="status" id="status3">You have <b id="roundsLeft">5</b> probe rounds.</div>
+        <div class="history" id="history"></div>
+      </section>
+
+      <section class="panel">
+        <h3 class="section-title">Round 6: 7-letter hangman-style solve</h3>
+        <div class="slots" id="slots"></div>
+        <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+          <button id="hintBtn" title="Reveal a correct letter in a random empty position">Hint</button>
+          <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">∞</b>. Type letters into the slots or use Hint to reveal a letter in-place.</div>
+        </div>
+        <div class="status" id="status10">You can type in the slots at any time.</div>
+
+        <div id="foundWrap" class="rowtitle">Letters found so far (<span id="foundCount">0</span>):</div>
+        <div class="letters" id="foundLetters"></div>
+
+        <div id="eliminatedWrap" class="rowtitle hidden">Eliminated letters:</div>
+        <div class="letters" id="eliminatedLetters"></div>
+
+        <div id="notGuessedWrap" class="rowtitle hidden">Not yet guessed:</div>
+        <div class="letters" id="notGuessedLetters"></div>
+      </section>
+
+      <section class="panel">
+        <h3 class="section-title">How scoring works</h3>
+        <div class="hints">
+          <span class="pill"><span class="circ" title="Letter exists; number shows total appearances in Standard mode"><span id="circExample">2</span></span> Exists in word</span>
+          <span class="pill"><span class="x"></span> Not in word</span>
+        </div>
+        <div class="footer">
+          <div>Target words are 7 letters. Standard shows repeated letters; Insane hides counts.</div>
+          <div><span id="debug" class="hidden"></span></div>
+        </div>
+      </section>
+    </div>
+
+    <div id="overlay" class="overlay">
+      <div class="toast">
+        <h2>Nice! You solved it 🎉</h2>
+        <p id="overlayMsg">That was clean.</p>
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+          <button id="playAgain" class="primary">Play again</button>
+          <button id="closeOverlay">Close</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    (function(){
+      // ---------- EMBEDDED DATA (no fetch) ----------
+      var EMBED_WORDS = [
+        "ANALOGY","APRICOT","ARCHIVE","BALANCE","CAPTURE","CRYSTAL","DIAGRAM","EMERALD",
+        "GLACIER","GRANITE","HARVEST","HORIZON","INSIGHT","JOURNEY","KINGDOM","LECTURE",
+        "LIBRARY","MYSTERY","ORCHARD","OUTCOME","PAINTER","PRAIRIE","RAINBOW","RESOLVE",
+        "REVOLVE","SCHOLAR","SECURED","SEQUOIA","SERPENT","SINCERE","SPARKLE","STADIUM",
+        "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS"
+      ];
+      var EMBED_THREE = [
+        "ACE","ACT","ADD","AID","AIR","ALE","AND","ANT","ANY","APE","ARE","ARM","ART","ASH","ASK",
+        "BAD","BAG","BAR","BAT","BED","BEE","BET","BIG","BIN","BIT","BOX","BOY","BUG","BUS","BUT",
+        "CAB","CAN","CAR","CAT","COD","COG","COP","COT","COW","CRY","CUP","CUT","DAD","DAY","DEW",
+        "DID","DIG","DOG","DOT","DRY","EAR","EAT","EGG","ELF","END","ERA","EVE","EYE","FAN","FAR",
+        "FAT","FEW","FIG","FIN","FIT","FIX","FLY","FOE","FOG","FOR","FOX","FRY","FUR","GAS","GEL",
+        "GEM","GET","GIN","GOD","GOT","GUM","GUN","GYM","HAT","HEN","HER","HIP","HIT","HOG","HOP",
+        "HOT","HUG","ICE","INK","INN","ION","ITS","IVY","JAM","JAR","JET","JOB","JOY","JUG","KID",
+        "KIN","LAB","LAD","LAP","LAW","LAY","LED","LEG","LET","LID","LIE","LIP","LIT","LOG","LOT",
+        "LOW","MAD","MAN","MAP","MAT","MAY","MEN","MET","MID","MOM","MOP","MUD","MUG","NAP","NET",
+        "NEW","NIB","NIP","NOD","NOR","NOT","NOW","NUT","OAK","OAR","OAT","ODD","OFF","OIL","OLD",
+        "ONE","OPT","ORB","OUT","OWL","PAD","PAL","PAN","PAR","PAT","PAW","PAY","PEA","PEG","PEN",
+        "PEP","PET","PEW","PIG","PIN","PIT","POD","POP","POT","PRO","PRY","PUG","PUN","PUP","PUT",
+        "RAD","RAG","RAM","RAN","RAP","RAT","RAW","RAY","RED","RID","RIG","RIM","RIP","ROD","ROE",
+        "ROT","ROW","RUB","RUG","RUM","RUN","RYE","SAD","SAP","SAT","SAW","SAY","SEA","SEE","SEW",
+        "SHE","SHY","SIN","SIP","SIR","SIT","SKI","SKY","SOD","SON","SOW","SOY","SPA","SPY","SUB",
+        "SUE","SUM","SUN","SUP","TAB","TAG","TAN","TAP","TAR","TEA","TEN","THE","TIE","TIN","TIP",
+        "TOE","TOG","TON","TOO","TOP","TOW","TOY","TRY","TUB","TUG","URN","USE","VAN","VAT","VET",
+        "VOW","WAR","WAS","WAX","WAY","WEB","WED","WET","WHO","WHY","WIN","WIT","WOE","WOK","WON",
+        "WOO","WOW","WRY","YAK","YAM","YAP","YEA","YES","YET","YOU","ZAP","ZED","ZIP","ZOO"
+      ];
+
+      // ---------- Theme ----------
+      var THEME_KEY = "sevensolve_theme";
+      var themeToggle = document.getElementById("themeToggle");
+      var savedTheme = localStorage.getItem(THEME_KEY) || "light";
+      document.documentElement.setAttribute("data-theme", savedTheme);
+      themeToggle.checked = (savedTheme === "dark");
+      themeToggle.addEventListener("change", function(e){
+        var t = e.target.checked ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+        localStorage.setItem(THEME_KEY, t);
+      });
+
+      // ---------- Sounds (lazy) ----------
+      var audioCtx = null;
+      var soundKey = "sevensolve_sound";
+      var soundOn = localStorage.getItem(soundKey) !== "off";
+      var soundToggle = document.getElementById("soundToggle");
+      soundToggle.checked = soundOn;
+      function getAudioCtx(){
+        if (!soundOn) return null;
+        if (!audioCtx) {
+          var Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === "suspended") try { audioCtx.resume(); } catch(_){}
+        return audioCtx;
+      }
+      function setSound(on){ soundOn = on; localStorage.setItem(soundKey, on ? "on" : "off"); soundToggle.checked = on; }
+      document.addEventListener("keydown", function(e){ if ((e.key||"").toLowerCase()==="m") setSound(!soundOn); });
+      soundToggle.addEventListener("change", function(e){ setSound(!!e.target.checked); });
+      function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
+      document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
+      function chirp(startFreq, endFreq, dur, type, gain){
+        if (!soundOn) return;
+        var ctx = getAudioCtx(); if (!ctx) return;
+        dur = dur || 140; type = type || "sine"; gain = gain || 0.02;
+        var o = ctx.createOscillator(); var g = ctx.createGain();
+        o.type = type;
+        try { o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + dur/1000); }
+        catch(_){ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime + dur/1000); }
+        g.gain.setValueAtTime(gain, ctx.currentTime);
+        try { g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur/1000); }
+        catch(_){ g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + dur/1000); }
+        o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur/1000);
+      }
+      var sfx = {
+        probeGood: function(){ chirp(480,760,120,"triangle",0.02); },
+        probeBad: function(){ chirp(220,140,120,"sine",0.015); },
+        place: function(){ chirp(500,520,60,"square",0.012); },
+        hint: function(){ chirp(620,880,160,"triangle",0.025); },
+        reveal: function(){ chirp(360,540,120,"sine",0.02); setTimeout(function(){ chirp(540,760,120,"sine",0.02); },130); setTimeout(function(){ chirp(760,1020,150,"sine",0.02); },260); },
+        success: function(){ [660,830,990,1240].forEach(function(f,i){ setTimeout(function(){ chirp(f,f+40,120,"triangle",0.03); }, i*120); }); }
+      };
+
+      // ---------- Data ----------
+      var WORDS = EMBED_WORDS; // no fetch
+      var TARGET_LEN = 7;
+      var ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      var DIFFICULTY_CONFIG = { normal:{probes:5,hintCap:Infinity}, hard:{probes:4,hintCap:1} };
+      var THREE_LETTER_DICT = new Set(EMBED_THREE);
+
+      // ---------- State & helpers ----------
+      var state = {
+        target: "",
+        found: new Set(),
+        eliminated: new Set(),
+        guessed: new Set(),
+        roundsUsed: 0,
+        maxProbeRounds: 5,
+        finished: false,
+        mode: "standard",
+        difficulty: "normal",
+        validateProbes: true,
+        usedInSlotsCounts: {},
+        slots: Array(TARGET_LEN).fill(""),
+        hintsUsed: 0,
+        hintsCap: Infinity
+      };
+      function randomChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+      function letterCounts(word){ var m = {}; for (var i=0;i<word.length;i++){ var ch = word[i]; m[ch]=(m[ch]||0)+1; } return m; }
+      function isAlpha(str){ return /^[A-Za-z]+$/.test(str); }
+
+      // ---------- DOM ----------
+      var historyEl = document.getElementById("history");
+      var roundsLeftEl = document.getElementById("roundsLeft");
+      var status3El = document.getElementById("status3");
+      var status10El = document.getElementById("status10");
+      var foundLettersEl = document.getElementById("foundLetters");
+      var foundCountEl = document.getElementById("foundCount");
+      var eliminatedLettersEl = document.getElementById("eliminatedLetters");
+      var notGuessedLettersEl = document.getElementById("notGuessedLetters");
+      var guess3El = document.getElementById("guess3");
+      var submit3El = document.getElementById("submit3");
+      var foundWrap = document.getElementById("foundWrap");
+      var eliminatedWrap = document.getElementById("eliminatedWrap");
+      var notGuessedWrap = document.getElementById("notGuessedWrap");
+      var modeSelect = document.getElementById("modeSelect");
+      var difficultySelect = document.getElementById("difficultySelect");
+      var validateToggle = document.getElementById("validateToggle");
+      var slotsEl = document.getElementById("slots");
+      var hintBtn = document.getElementById("hintBtn");
+      var hintsUsedEl = document.getElementById("hintsUsed");
+      var hintsCapEl = document.getElementById("hintsCap");
+      var overlay = document.getElementById("overlay");
+      var closeOverlay = document.getElementById("closeOverlay");
+      var playAgain = document.getElementById("playAgain");
+      var modeNotice = document.getElementById("modeNotice");
+
+      function applyDifficulty(d){
+        state.difficulty = d;
+        var cfg = { normal:{probes:5,hintCap:Infinity}, hard:{probes:4,hintCap:1} }[d];
+        state.maxProbeRounds = cfg.probes;
+        state.hintsCap = cfg.hintCap;
+        hintsCapEl.textContent = (state.hintsCap === Infinity ? "∞" : state.hintsCap);
+        roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
+        status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
+      }
+
+      function startNewGame() {
+        state.target = randomChoice(WORDS);
+        state.roundsUsed = 0;
+        state.finished = false;
+        state.found.clear();
+        state.eliminated.clear();
+        state.guessed.clear();
+        state.usedInSlotsCounts = {};
+        state.slots = Array(TARGET_LEN).fill("");
+        state.hintsUsed = 0;
+        hintsUsedEl.textContent = "0";
+        hintsCapEl.textContent = (state.hintsCap === Infinity ? "∞" : state.hintsCap);
+        historyEl.innerHTML = "";
+        roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
+        status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
+        status10El.textContent = "You can type in the slots at any time.";
+        renderFound(); renderEliminated(); renderNotGuessed();
+        renderSlots(true);
+        hintBtn.disabled = false;
+      }
+
+      function bumpTiles(container){
+        var tiles = container.querySelectorAll('.tile');
+        for (var i=0;i<tiles.length;i++){
+          (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); }, 110); })(tiles[i]);
+        }
+      }
+
+      function renderFound(){
+        var counts = letterCounts(state.target);
+        var arr = Array.from(state.found).sort();
+        var tiles = [];
+        if (state.mode === "standard") { for (var i=0;i<arr.length;i++){ var ch = arr[i]; var n = counts[ch] || 1; for (var j=0;j<n;j++) tiles.push(ch); } }
+        else { tiles = arr; }
+        var useCounts = Object.assign({}, state.usedInSlotsCounts);
+        var html = "";
+        for (var k=0;k<tiles.length;k++){
+          var c = tiles[k];
+          var classes = ["tile"];
+          if ((useCounts[c]||0) > 0){ classes.push("slash"); useCounts[c]--; }
+          html += "<div class='" + classes.join(" ") + "'>" + c + "</div>";
+        }
+        foundLettersEl.innerHTML = html;
+        foundWrap.classList.toggle("hidden", tiles.length === 0);
+        bumpTiles(foundLettersEl);
+        foundCountEl.textContent = Array.from(state.found).length;
+      }
+
+      function renderEliminated(){
+        var arr = Array.from(state.eliminated).sort();
+        var html = "";
+        for (var i=0;i<arr.length;i++){
+          var ch = arr[i];
+          var classes = ["tile","bad"];
+          if ((state.usedInSlotsCounts[ch]||0) > 0) classes.push("slash");
+          html += "<div class='" + classes.join(" ") + "'>" + ch + "</div>";
+        }
+        eliminatedLettersEl.innerHTML = html;
+        eliminatedWrap.classList.toggle("hidden", arr.length === 0);
+        bumpTiles(eliminatedLettersEl);
+      }
+
+      function renderNotGuessed(){
+        var ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        var remaining = ALFA.filter(function(ch){ return !state.guessed.has(ch); });
+        var html = "";
+        for (var i=0;i<remaining.length;i++){
+          var ch = remaining[i];
+          var classes = ["tile","dim"];
+          if ((state.usedInSlotsCounts[ch]||0) > 0) classes.push("slash");
+          html += "<div class='" + classes.join(" ") + "'>" + ch + "</div>";
+        }
+        notGuessedLettersEl.innerHTML = html;
+        notGuessedWrap.classList.toggle("hidden", remaining.length === 26);
+      }
+
+      function addHistoryRow(guess, markers){
+        var row = document.createElement("div");
+        row.className = "guess-item";
+        var left = document.createElement("div");
+        left.textContent = guess.toUpperCase();
+        var right = document.createElement("div");
+        right.className = "badge";
+        markers.forEach(function(m){
+          var span = document.createElement("span");
+          span.className = "pill";
+          span.innerHTML = m.in ? ("<span class='circ'>" + m.count + "</span> in word") : "<span class='x'></span> not in";
+          right.appendChild(span);
+        });
+        row.appendChild(left); row.appendChild(right);
+        historyEl.prepend(row);
+      }
+
+      function validateProbeWord(g){ return !state.validateProbes || THREE_LETTER_DICT.has(g); }
+
+      function handleProbe(){
+        if (state.finished) return;
+        var g = (guess3El.value || "").trim().toUpperCase();
+        if (g.length !== 3 || !isAlpha(g)) { status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); return; }
+        if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>That’s not in the dictionary. Try another 3-letter word.</span>"; sfx.probeBad(); return; }
+        var counts = letterCounts(state.target);
+        var markers = [];
+        for (var i=0;i<3;i++){
+          var ch = g[i];
+          state.guessed.add(ch);
+          if (state.target.indexOf(ch) !== -1){
+            markers.push({in:true, count: counts[ch] || 1});
+            state.found.add(ch); state.eliminated.delete(ch); sfx.probeGood();
+          } else {
+            markers.push({in:false});
+            state.eliminated.add(ch); sfx.probeBad();
+          }
+        }
+        addHistoryRow(g, markers);
+        renderFound(); renderEliminated(); renderNotGuessed();
+        state.roundsUsed += 1;
+        var left = state.maxProbeRounds - state.roundsUsed;
+        roundsLeftEl.textContent = left;
+        status3El.innerHTML = left > 0 ? "You have <b>" + left + "</b> probe rounds left." : "Probe phase complete.";
+        guess3El.value = "";
+      }
+
+      function renderSlots(focusFirst){
+        slotsEl.innerHTML = "";
+        for (var i=0;i<TARGET_LEN;i++){
+          (function(idx){
+            var slot = document.createElement("div"); slot.className = "slot";
+            var input = document.createElement("input"); input.setAttribute("maxlength","1"); input.value = state.slots[idx];
+            input.addEventListener("input", function(e){
+              var v = (e.target.value || "").toUpperCase().replace(/[^A-Z]/g,"");
+              e.target.value = v; state.slots[idx] = v; sfx.place();
+              recomputeUsedInSlotsCounts(); checkSolved();
+              if (v && idx<TARGET_LEN-1){ var next = slotsEl.children[idx+1].querySelector("input"); if (next) next.focus(); }
+            });
+            input.addEventListener("keydown", function(e){
+              if (e.key === "Backspace" && !e.target.value && idx>0){
+                var prev = slotsEl.children[idx-1].querySelector("input"); if (prev) prev.focus();
+              }
+            });
+            slot.appendChild(input);
+            var line = document.createElement("div"); line.className = "line"; slot.appendChild(line);
+            slotsEl.appendChild(slot);
+          })(i);
+        }
+        if (focusFirst){ var first = slotsEl.querySelector("input"); if (first) first.focus(); }
+      }
+
+      function recomputeUsedInSlotsCounts(){
+        state.usedInSlotsCounts = {};
+        for (var i=0;i<state.slots.length;i++){ var ch = state.slots[i]; if (ch) state.usedInSlotsCounts[ch] = (state.usedInSlotsCounts[ch]||0)+1; }
+        renderFound(); renderEliminated(); renderNotGuessed();
+      }
+
+      function updateHintState(){
+        hintsUsedEl.textContent = String(state.hintsUsed);
+        hintsCapEl.textContent = (state.hintsCap === Infinity ? "∞" : state.hintsCap);
+      }
+
+      function hint(){
+        var emptyIdx = []; for (var i=0;i<TARGET_LEN;i++){ if (!state.slots[i]) emptyIdx.push(i); }
+        if (emptyIdx.length === 0) { status10El.textContent = "All slots are filled."; shakeSlots(); return; }
+        if (state.hintsUsed >= state.hintsCap) { status10El.textContent = "No hints remaining."; shakeSlots(); return; }
+        var idx = emptyIdx[Math.floor(Math.random()*emptyIdx.length)];
+        var letter = state.target[idx];
+        state.slots[idx] = letter;
+        var input = slotsEl.children[idx].querySelector("input"); if (input) input.value = letter;
+        state.guessed.add(letter); state.found.add(letter);
+        state.hintsUsed += 1; sfx.hint();
+        recomputeUsedInSlotsCounts(); updateHintState(); checkSolved();
+      }
+
+      function reveal(){
+        for (var i=0;i<TARGET_LEN;i++){
+          state.slots[i] = state.target[i];
+          var input = slotsEl.children[i].querySelector("input"); if (input){ input.value = state.target[i]; }
+        }
+        state.guessed = new Set(state.target.split(""));
+        state.found = new Set(state.target.split(""));
+        recomputeUsedInSlotsCounts();
+        status10El.innerHTML = "<span>The target is <b>" + state.target + "</b>.</span>";
+        sfx.reveal(); celebrate();
+      }
+
+      function allFilled(){ return state.slots.every(function(ch){ return !!ch; }); }
+      function currentGuess(){ return state.slots.join(""); }
+      function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); }, 260); }
+      function celebrate(){ overlay.classList.add('show'); sfx.success(); launchConfetti(document.querySelector('.app')); }
+      function launchConfetti(root){
+        var colors = ["#f43f5e","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ec4899"];
+        for (var i=0;i<80;i++){
+          var c = document.createElement('div'); c.className = 'confetti';
+          c.style.left = (Math.random()*100) + '%';
+          c.style.background = colors[Math.floor(Math.random()*colors.length)];
+          c.style.transform = 'translateY(-10px) rotate(' + (Math.random()*360)+'deg)';
+          c.style.animation = 'fall ' + (2+Math.random()*2)+'s linear '+ (Math.random()*0.8)+'s forwards';
+          root.appendChild(c); (function(el){ setTimeout(function(){ el.remove(); }, 4000); })(c);
+        }
+      }
+
+      // Events
+      document.getElementById("newGame").addEventListener("click", function(){ startNewGame(); });
+      document.getElementById("reveal").addEventListener("click", reveal);
+      document.getElementById("submit3").addEventListener("click", handleProbe);
+      document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key === "Enter") handleProbe(); });
+      document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
+      document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
+      document.getElementById("hintBtn").addEventListener("click", hint);
+      document.getElementById("validateToggle").addEventListener("change", function(e){ state.validateProbes = !!e.target.checked; });
+      document.getElementById("modeSelect").addEventListener("change", function(e){
+        state.mode = e.target.value;
+        document.getElementById("circExample").textContent = state.mode === "standard" ? "2" : "";
+        document.getElementById("modeNotice").classList.toggle("hidden", state.mode !== "insane");
+        renderFound();
+      });
+      document.getElementById("difficultySelect").addEventListener("change", function(e){
+        var val = e.target.value; applyDifficulty(val); startNewGame();
+      });
+
+      // Init
+      applyDifficulty("normal");
+      startNewGame();
+      document.getElementById("modeNotice").classList.toggle("hidden", modeSelect.value !== "insane");
+    })();
+  </script>
+</body>
+</html>
