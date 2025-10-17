@@ -84,8 +84,6 @@
     .modal-card h3{ margin:0 0 10px 0; }
     .modal-body{ min-height:180px; line-height:1.6; color:var(--muted); }
     .modal-footer{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
-    .how-visual{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:10px; }
-    .how-visual svg{ filter: drop-shadow(var(--glow-soft)); }
   </style>
 </head>
 <body>
@@ -128,7 +126,7 @@
         <div class="row">
           <label for="guess3">3-letter guess</label>
           <div style="display:flex; gap:8px; width:100%;">
-            <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off"/>
+            <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off" autocapitalize="characters" spellcheck="false"/>
             <button class="primary" id="submit3">Submit</button>
           </div>
         </div>
@@ -142,7 +140,7 @@
         <div style="display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap;">
           <button id="hintBtn" title="Reveal a correct letter in a random empty position">Hint</button>
           <button id="submitSolve" class="primary" title="Submit your 7-letter guess">Submit Guess</button>
-          <button id="reveal" class="ghost" title="Fill the answer">Reveal</button>
+          <button id="reveal" class="ghost" title="Show the answer">Reveal</button>
           <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">∞</b>. Type letters into the slots—focus auto-advances.</div>
         </div>
         <div class="status" id="status10">You can type in the slots at any time.</div>
@@ -170,9 +168,9 @@
       </section>
     </div>
 
-    <div id="overlay" class="overlay">
+    <div id="overlay" class="overlay" aria-live="polite">
       <div class="toast">
-        <h2>Nice! You solved it 🎉</h2>
+        <h2 id="overlayTitle">Nice! You solved it 🎉</h2>
         <p id="overlayMsg">That was clean.</p>
         <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
           <button id="playAgain" class="primary">Play again</button>
@@ -230,19 +228,19 @@
       function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
       document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
       function chirp(startFreq,endFreq,dur,type,gain){
-        if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.02;
+        if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
         var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
         try{ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime+dur/1000); }catch(_){ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime+dur/1000); }
         g.gain.setValueAtTime(gain, ctx.currentTime); try{ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }catch(_){ g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }
         o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+dur/1000);
       }
       var sfx = {
-        probeGood: function(){ chirp(520,800,120,"triangle",0.02); },
-        probeBad: function(){ chirp(240,160,120,"sine",0.015); },
-        place: function(){ chirp(520,540,60,"square",0.012); },
-        hint: function(){ chirp(640,900,160,"triangle",0.025); },
-        reveal: function(){ chirp(360,540,120,"sine",0.02); setTimeout(function(){ chirp(540,760,120,"sine",0.02); },130); setTimeout(function(){ chirp(760,1020,150,"sine",0.02); },260); },
-        success: function(){ [660,830,990,1240].forEach(function(f,i){ setTimeout(function(){ chirp(f,f+40,120,"triangle",0.03); }, i*120); }); }
+        probeGood: function(){ chirp(520,800,120,"triangle",0.035); },
+        probeBad: function(){ chirp(240,160,140,"sine",0.035); },
+        place: function(){ chirp(520,540,60,"square",0.02); },
+        hint: function(){ chirp(640,900,160,"triangle",0.03); },
+        revealUp: function(){ chirp(360,540,120,"sine",0.025); setTimeout(function(){ chirp(540,760,120,"sine",0.025); },130); setTimeout(function(){ chirp(760,1020,150,"sine",0.025); },260); },
+        success: function(){ [660,830,990,1240].forEach(function(f,i){ setTimeout(function(){ chirp(f,f+40,120,"triangle",0.035); }, i*120); }); }
       };
 
       // State
@@ -273,6 +271,8 @@
       var hintsUsedEl = document.getElementById("hintsUsed");
       var hintsCapEl = document.getElementById("hintsCap");
       var overlay = document.getElementById("overlay");
+      var overlayTitle = document.getElementById("overlayTitle");
+      var overlayMsg = document.getElementById("overlayMsg");
       var closeOverlay = document.getElementById("closeOverlay");
       var playAgain = document.getElementById("playAgain");
       var modeNotice = document.getElementById("modeNotice");
@@ -312,7 +312,8 @@
         else { tiles = arr; }
         var useCounts = Object.assign({}, state.usedInSlotsCounts); var html="";
         for (var k=0;k<tiles.length;k++){ var c=tiles[k]; var classes=["tile"]; if((useCounts[c]||0)>0){ classes.push("slash"); useCounts[c]--; } html += "<div class='"+classes.join(" ")+"'>"+c+"</div>"; }
-        foundLettersEl.innerHTML = html; foundWrap.classList.toggle("hidden", tiles.length===0); bumpTiles(foundLettersEl); foundCountEl.textContent = Array.from(state.found).length;
+        foundLettersEl.innerHTML = html; foundWrap.classList.toggle("hidden", tiles.length===0); bumpTiles(foundLettersEl);
+        foundCountEl.textContent = tiles.length;
       }
 
       function renderEliminated(){
@@ -356,7 +357,11 @@
         slotsEl.innerHTML="";
         for (var i=0;i<TARGET_LEN;i++){ (function(idx){
           var slot=document.createElement("div"); slot.className="slot";
-          var input=document.createElement("input"); input.setAttribute("maxlength","1"); input.value = state.slots[idx];
+          var input=document.createElement("input");
+          input.setAttribute("maxlength","1"); input.setAttribute("inputmode","text");
+          input.setAttribute("autocomplete","off"); input.setAttribute("autocapitalize","characters");
+          input.setAttribute("spellcheck","false"); input.value = state.slots[idx];
+          slot.addEventListener("click", function(){ input.focus(); });
           input.addEventListener("input", function(e){
             var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
             e.target.value=v; state.slots[idx]=v; sfx.place();
@@ -371,6 +376,14 @@
           slot.appendChild(input); var line=document.createElement("div"); line.className="line"; slot.appendChild(line); slotsEl.appendChild(slot);
         })(i); }
         if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.focus(); }
+      }
+
+      function clearSlots(){
+        for (var i=0;i<TARGET_LEN;i++){
+          state.slots[i] = "";
+          var input = slotsEl.children[i].querySelector("input"); if (input){ input.value=""; }
+        }
+        recomputeUsedInSlotsCounts();
       }
 
       function recomputeUsedInSlotsCounts(){
@@ -393,13 +406,15 @@
       function reveal(){
         for (var i=0;i<TARGET_LEN;i++){ state.slots[i]=state.target[i]; var input=slotsEl.children[i].querySelector("input"); if(input){ input.value=state.target[i]; } }
         state.guessed = new Set(state.target.split("")); state.found = new Set(state.target.split(""));
-        recomputeUsedInSlotsCounts(); status10El.innerHTML = "<span>The target is <b>"+state.target+"</b>.</span>"; sfx.reveal(); celebrate();
+        recomputeUsedInSlotsCounts();
+        overlayTitle.textContent = "Better luck next time";
+        overlayMsg.innerHTML = "The target was <b>"+state.target+"</b>.";
+        overlay.classList.add('show');
       }
 
-      function allFilled(){ return state.slots.every(function(ch){ return !!ch; }); }
       function currentGuess(){ return state.slots.join(""); }
       function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); }
-      function celebrate(){ overlay.classList.add('show'); sfx.success(); launchConfetti(document.querySelector('.app')); }
+      function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.success(); launchConfetti(document.querySelector('.app')); }
       function launchConfetti(root){
         var colors=["#22d3ee","#8b5cf6","#10b981","#f59e0b","#ef4444"];
         for (var i=0;i<90;i++){ var c=document.createElement('div'); c.className='confetti';
@@ -415,51 +430,25 @@
         var guess=currentGuess();
         if (guess.length<TARGET_LEN){ status10El.textContent="Finish all 7 letters, then Submit."; shakeSlots(); return; }
         if (guess===state.target){ celebrate(); return; }
+        var prevGuessed = new Set(state.guessed);
         var u={}; for (var i=0;i<guess.length;i++) u[guess[i]]=true;
-        Object.keys(u).forEach(function(ch){ state.guessed.add(ch); if (state.target.indexOf(ch)===-1){ state.eliminated.add(ch); } else { state.found.add(ch); } });
+        Object.keys(u).forEach(function(ch){
+          if (!prevGuessed.has(ch)){
+            state.guessed.add(ch);
+            if (state.target.indexOf(ch)===-1){ state.eliminated.add(ch); } else { state.found.add(ch); }
+          }
+        });
         renderFound(); renderEliminated(); renderNotGuessed();
-        status10El.innerHTML = "<span class='warning'>Incorrect guess. Letters not in the word were eliminated.</span>";
+        status10El.innerHTML = "<span class='warning'>Incorrect guess. New letters not in the word were eliminated.</span>";
+        clearSlots();
         shakeSlots();
       }
 
-      // How-to modal with visuals
+      // Minimal "How to"
       var howModal=document.getElementById("howtoModal"), howBody=document.getElementById("howtoBody"), howPage=0;
       function renderHow(){
-        if (howPage===0){
-          howBody.innerHTML = `
-            <b>Probe Rounds (1–5):</b><br/>
-            Enter 3-letter words to scout the target. Each letter gets feedback:
-            <div class="how-visual">
-              <svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
-                <rect x="10" y="10" rx="10" ry="10" width="200" height="40" fill="none" stroke="var(--border)" />
-                <g transform="translate(28,16)">
-                  <circle cx="0" cy="14" r="10" fill="none" stroke="var(--good)" stroke-width="3"/>
-                  <text x="0" y="18" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">2</text>
-                  <text x="14" y="18" font-size="12" fill="var(--muted)">= in word (2x)</text>
-                </g>
-                <g transform="translate(132,16)">
-                  <rect x="-10" y="4" width="18" height="18" rx="3" fill="var(--bad)"/>
-                  <line x1="-7" y1="13" x2="5" y2="5" stroke="white" stroke-width="2"/>
-                  <line x1="-7" y1="13" x2="5" y2="21" stroke="white" stroke-width="2"/>
-                  <text x="14" y="18" font-size="12" fill="var(--muted)">= not in word</text>
-                </g>
-              </svg>
-            </div>
-            Repeated letters matter!
-          `;
-        } else {
-          howBody.innerHTML = `
-            <b>Round 6 (Solve):</b><br/>
-            Type directly into the 7 slots. Focus auto-advances. Use <b>Hint</b> to place a correct letter at a random empty position. <b>Reveal</b> fills the answer if you give up.
-            <div class="how-visual">
-              <svg width="320" height="70" viewBox="0 0 320 70" xmlns="http://www.w3.org/2000/svg">
-                <g transform="translate(10,20)">
-                  ${Array.from({length:7}).map((_,i)=>`<rect x="${i*44}" y="0" width="40" height="40" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"></rect>`).join('')}
-                </g>
-              </svg>
-            </div>
-          `;
-        }
+        if (howPage===0){ howBody.innerHTML = "<b>Probe Rounds (1–5):</b><br/>Enter 3-letter words. Circle number = letter exists (repeats in Standard). X = not in word."; }
+        else { howBody.innerHTML = "<b>Round 6 (Solve):</b><br/>Type into the 7 slots. Submit checks the word (clears on miss). Hint places a correct letter. Reveal shows the answer without a win."; }
       }
       document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); howModal.classList.add("show"); });
       document.getElementById("howtoClose").addEventListener("click", function(){ howModal.classList.remove("show"); });
@@ -478,7 +467,6 @@
       // Init
       applyDifficulty("normal"); startNewGame();
       document.getElementById("modeNotice").classList.toggle("hidden", document.getElementById("modeSelect").value !== "insane");
-      var SEEN_KEY="sevensolve_seenhow"; if (!localStorage.getItem(SEEN_KEY)){ document.getElementById("howTo").click(); localStorage.setItem(SEEN_KEY,"1"); }
     })();
   </script>
 </body>
