@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover"/>
@@ -8,7 +8,6 @@
   <meta name="mobile-web-app-capable" content="yes">
   <style>
     :root{
-      /* Bright Azure palette */
       --bg:#EAF4FF; --ink:#0D1A2B; --muted:#52607A; --panel:#FFFFFF; --border:rgba(26,115,232,.18);
       --tile:#F4F9FF; --tile-alt:#EEF6FF; --accent:#1A73E8; --accent2:#4FC3F7; --good:#10B981;
       --bad:#EF4444; --warning:#F59E0B; --ring:rgba(26,115,232,.25);
@@ -16,7 +15,7 @@
       --glow-soft:0 0 10px rgba(79,195,247,.22);
       --success-bg:#E8FFF6; --success-ink:#065F46; --notice-bg:#F1F6FF; --notice-ink:#0D1A2B;
     }
-    [data-theme="dark"]{
+    html[data-theme="dark"]{
       --bg:#0A0F1A; --ink:#EAF4FF; --muted:#A8B6CD; --panel:#0F1624; --border:rgba(148,163,184,.18);
       --tile:#0E1522; --tile-alt:#0B1220; --accent:#5EC0FF; --accent2:#8BC8FF; --good:#46FFB6;
       --bad:#FF6B6B; --warning:#FFD166; --ring:rgba(94,192,255,.35);
@@ -24,7 +23,6 @@
       --glow-soft:0 0 12px rgba(94,192,255,.22);
       --success-bg:#10211B; --success-ink:#90FFE0; --notice-bg:#0F1426; --notice-ink:#DDE9FF;
     }
-
     *{box-sizing:border-box}
     body{
       margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
@@ -126,7 +124,7 @@
 </head>
 <body>
   <!-- Splash (first view) -->
-  <div id="brandSplash" class="brand-splash">
+  <div id="brandSplash" class="brand-splash" hidden>
     <div class="brand-card">
       <div class="logo-hero"><span class="seven">7</span> HEPTIX</div>
       <div class="tagline">A word game for pattern thinkers.</div>
@@ -240,446 +238,444 @@
   </div>
 
   <script>
-    (function(){
-      var TARGET_LEN = 7;
+  document.addEventListener('DOMContentLoaded', function(){
+    var TARGET_LEN = 7;
 
-      // ===== Word library & randomization =====
-      var BUILTIN_WORDS = [
-        "ANALOGY","APRICOT","ARCHIVE","BALANCE","CAPTURE","CRYSTAL","DIAGRAM","EMERALD",
-        "GLACIER","GRANITE","HARVEST","HORIZON","INSIGHT","JOURNEY","KINGDOM","LECTURE",
-        "LIBRARY","MYSTERY","ORCHARD","OUTCOME","PAINTER","PRAIRIE","RAINBOW","RESOLVE",
-        "REVOLVE","SCHOLAR","SECURED","SEQUOIA","SERPENT","SINCERE","SPARKLE","STADIUM",
-        "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS",
-        "ACCOUNT","ACQUIRE","ADAPTED","ADJACENT","ADMIRER","ADVERSE","AFFINITY","AGILITY",
-        "ALARMED","ALERTED","ALREADY","AMBIENT","ANCIENT","ANIMATE","APPEASE","ARRANGE",
-        "ASCENDS","ASSERTS","ASTOUND","AUSPICE","AVARICE","BACKING","BARGAIN","BARRIER",
-        "BEARING","BECOMES","BELONGS","BENEATH","BETRAYS","BRACING","BRIGHTE","BROCADE"
-      ];
-      var WORDS = [];
-      var deck = [];
-      var RECENT_KEY = "heptix_recent_targets_v1";
+    // ===== Word library & randomization =====
+    var BUILTIN_WORDS = [
+      "ANALOGY","APRICOT","ARCHIVE","BALANCE","CAPTURE","CRYSTAL","DIAGRAM","EMERALD",
+      "GLACIER","GRANITE","HARVEST","HORIZON","INSIGHT","JOURNEY","KINGDOM","LECTURE",
+      "LIBRARY","MYSTERY","ORCHARD","OUTCOME","PAINTER","PRAIRIE","RAINBOW","RESOLVE",
+      "REVOLVE","SCHOLAR","SECURED","SEQUOIA","SERPENT","SINCERE","SPARKLE","STADIUM",
+      "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS",
+      "ACCOUNT","ACQUIRE","ADAPTED","ADJACENT","ADMIRER","ADVERSE","AFFINITY","AGILITY",
+      "ALARMED","ALERTED","ALREADY","AMBIENT","ANCIENT","ANIMATE","APPEASE","ARRANGE",
+      "ASCENDS","ASSERTS","ASTOUND","AUSPICE","AVARICE","BACKING","BARGAIN","BARRIER",
+      "BEARING","BECOMES","BELONGS","BENEATH","BETRAYS","BRACING","BRIGHTE","BROCADE"
+    ];
+    var WORDS = [];
+    var deck = [];
+    var RECENT_KEY = "heptix_recent_targets_v1";
 
-      function shuffleInPlace(a){
-        var n=a.length;
-        if (window.crypto && crypto.getRandomValues){
-          var arr = new Uint32Array(n); crypto.getRandomValues(arr);
-          for (var i=n-1;i>0;i--){ var j = arr[i] % (i+1); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    function shuffleInPlace(a){
+      var n=a.length;
+      if (window.crypto && crypto.getRandomValues){
+        var arr = new Uint32Array(n); crypto.getRandomValues(arr);
+        for (var i=n-1;i>0;i--){ var j = arr[i] % (i+1); var t=a[i]; a[i]=a[j]; a[j]=t; }
+      }else{
+        for (var i=n-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+      }
+      return a;
+    }
+    function normalizeWords(list){
+      var out=[], seen={};
+      for (var i=0;i<list.length;i++){
+        var w=(list[i]||"").trim().toUpperCase();
+        if (w.length===TARGET_LEN && /^[A-Z]+$/.test(w) && !seen[w]){ seen[w]=1; out.push(w); }
+      }
+      return out;
+    }
+    function loadRecent(){ try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]"); }catch(_){ return []; } }
+    function saveRecent(arr){ try{ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(-200))); }catch(_){ } }
+    function buildDeck(){ deck = WORDS.slice(); shuffleInPlace(deck); }
+    function drawNextWord(){
+      var recent = loadRecent();
+      if (!deck.length) buildDeck();
+      for (var tries=0; tries<deck.length; tries++){
+        var w = deck.pop();
+        if (recent.indexOf(w) === -1) { recent.push(w); saveRecent(recent); return w; }
+      }
+      buildDeck(); var w2=deck.pop(); recent.push(w2); saveRecent(recent); return w2;
+    }
+    async function loadWords(){
+      try{
+        var resp = await fetch("words7.txt", {cache:"no-store"});
+        if (!resp.ok) throw new Error("no words7.txt");
+        var txt = await resp.text();
+        var arr = txt.split(/\r?\n/).map(function(s){ return s.trim(); }).filter(Boolean);
+        WORDS = normalizeWords(arr);
+        if (WORDS.length < 50) throw new Error("too few words");
+      }catch(e){
+        WORDS = normalizeWords(BUILTIN_WORDS);
+      }
+      buildDeck();
+    }
+
+    // ===== Theme: LIGHT default, toggle dark =====
+    var THEME_KEY = "heptix_theme";
+    var themeToggle = document.getElementById("themeToggle");
+    var savedTheme = localStorage.getItem(THEME_KEY) || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeToggle.checked = (savedTheme === "dark");
+    themeToggle.addEventListener("change", function(e){
+      var t = e.target.checked ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem(THEME_KEY, t);
+    });
+
+    // ===== Sounds =====
+    var audioCtx = null, soundKey = "heptix_sound";
+    var soundOn = localStorage.getItem(soundKey) !== "off";
+    var soundToggle = document.getElementById("soundToggle");
+    soundToggle.checked = soundOn;
+    function getAudioCtx(){ if(!soundOn) return null; if(!audioCtx){ var Ctx = window.AudioContext||window.webkitAudioContext; if(!Ctx) return null; audioCtx = new Ctx(); } if(audioCtx&&audioCtx.state==="suspended") try{audioCtx.resume();}catch(_){ } return audioCtx; }
+    function setSound(on){ soundOn = on; localStorage.setItem(soundKey, on?"on":"off"); soundToggle.checked = on; }
+    document.addEventListener("keydown", function(e){ if((e.key||"").toLowerCase()==="m") setSound(!soundOn); });
+    soundToggle.addEventListener("change", function(e){ setSound(!!e.target.checked); });
+    function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
+    document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
+
+    function chirp(startFreq,endFreq,dur,type,gain){
+      if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
+      var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
+      try{ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime+dur/1000); }catch(_){ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime+dur/1000); }
+      g.gain.setValueAtTime(gain, ctx.currentTime); try{ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }catch(_){ g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }
+      o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+dur/1000);
+    }
+    function whiteNoise(dur, gain, lpFreq){
+      if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return;
+      var bufferSize = Math.floor(ctx.sampleRate * dur);
+      var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      var data = buffer.getChannelData(0);
+      for (var i=0;i<bufferSize;i++){ data[i] = Math.random()*2-1; }
+      var src = ctx.createBufferSource(); src.buffer = buffer;
+      var g = ctx.createGain(); g.gain.setValueAtTime(gain, ctx.currentTime);
+      var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 2000;
+      src.connect(f).connect(g).connect(ctx.destination);
+      src.start(); src.stop(ctx.currentTime + dur);
+    }
+    var sfx = {
+      probeGood: function(){ chirp(520,800,120,"triangle",0.035); },
+      probeBad: function(){ chirp(240,160,140,"sine",0.035); },
+      place: function(){ chirp(520,540,60,"square",0.02); },
+      hint: function(){ chirp(740,1000,160,"triangle",0.03); },
+      winCheer: function(){ whiteNoise(1.6, 0.05, 2200);
+        [660, 880, 990, 1180, 1320].forEach(function(f,i){ setTimeout(function(){ chirp(f, f+80, 150, "triangle", 0.035); }, 110*i); });
+      }
+    };
+
+    // ===== Game state =====
+    var state = { target:"", found:new Set(), eliminated:new Set(), guessed:new Set(), roundsUsed:0, maxProbeRounds:5, finished:false, mode:"standard", difficulty:"normal", usedInSlotsCounts:{}, slots:Array(TARGET_LEN).fill(""), hintsUsed:0, hintsCap:3 };
+
+    // Helpers
+    function letterCounts(word){ var m={}; for (var i=0;i<word.length;i++){ var ch=word[i]; m[ch]=(m[ch]||0)+1; } return m; }
+    function isAlpha(str){ return /^[A-Za-z]+$/.test(str); }
+
+    // DOM
+    var historyEl = document.getElementById("history");
+    var roundsLeftEl = document.getElementById("roundsLeft");
+    var status3El = document.getElementById("status3");
+    var status10El = document.getElementById("status10");
+    var foundLettersEl = document.getElementById("foundLetters");
+    var foundCountEl = document.getElementById("foundCount");
+    var eliminatedLettersEl = document.getElementById("eliminatedLetters");
+    var notGuessedLettersEl = document.getElementById("notGuessedLetters");
+    var guess3El = document.getElementById("guess3");
+    var foundWrap = document.getElementById("foundWrap");
+    var eliminatedWrap = document.getElementById("eliminatedWrap");
+    var notGuessedWrap = document.getElementById("notGuessedWrap");
+    var slotsEl = document.getElementById("slots");
+    var hintBtn = document.getElementById("hintBtn");
+    var hintsUsedEl = document.getElementById("hintsUsed");
+    var hintsCapEl = document.getElementById("hintsCap");
+    var overlay = document.getElementById("overlay");
+    var overlayTitle = document.getElementById("overlayTitle");
+    var overlayMsg = document.getElementById("overlayMsg");
+    var closeOverlay = document.getElementById("closeOverlay");
+    var playAgain = document.getElementById("playAgain");
+    var revealBtn = document.getElementById("reveal");
+    var submitSolveBtn = document.getElementById("submitSolve");
+    var howButton = document.getElementById("howTo");
+    var howModal=document.getElementById("howtoModal"), howBody=document.getElementById("howtoBody");
+    var howPrev=document.getElementById("howtoPrev"), howNext=document.getElementById("howtoNext"), howClose=document.getElementById("howtoClose");
+    var howPage=0;
+    var splash = document.getElementById("brandSplash");
+
+    function applyDifficulty(d){
+      state.difficulty = d;
+      var cfg = { normal:{probes:5,hintCap:3}, hard:{probes:4,hintCap:1} }[d];
+      state.maxProbeRounds = cfg.probes; state.hintsCap = cfg.hintCap;
+      hintsCapEl.textContent = state.hintsCap;
+      roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
+      status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
+    }
+
+    function startNewGame(){
+      state.target = drawNextWord();
+      state.roundsUsed = 0; state.finished=false;
+      state.found.clear(); state.eliminated.clear(); state.guessed.clear();
+      state.usedInSlotsCounts = {}; state.slots = Array(TARGET_LEN).fill("");
+      state.hintsUsed = 0; hintsUsedEl.textContent = "0"; hintsCapEl.textContent = state.hintsCap;
+      historyEl.innerHTML=""; roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
+      status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
+      status10El.textContent = "You can type in the slots at any time.";
+      renderFound(); renderEliminated(); renderNotGuessed();
+      renderSlots(true); hintBtn.disabled=false;
+    }
+
+    function bumpTiles(container){ var tiles = container.querySelectorAll('.tile'); for (var i=0;i<tiles.length;i++){ (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); },110); })(tiles[i]); } }
+
+    function renderFound(){
+      var counts = letterCounts(state.target);
+      var arr = Array.from(state.found).sort(); var tiles = [];
+      if (state.mode === "standard"){ for (var i=0;i<arr.length;i++){ var ch=arr[i]; var n=counts[ch]||1; for (var j=0;j<n;j++) tiles.push(ch); } }
+      else { tiles = arr; }
+      var useCounts = Object.assign({}, state.usedInSlotsCounts); var html="";
+      for (var k=0;k<tiles.length;k++){ var c=tiles[k]; var classes=["tile"]; if((useCounts[c]||0)>0){ classes.push("slash"); useCounts[c]--; } html += "<div class='"+classes.join(" ")+"'>"+c+"</div>"; }
+      foundLettersEl.innerHTML = html; foundWrap.classList.toggle("hidden", tiles.length===0); bumpTiles(foundLettersEl);
+      foundCountEl.textContent = tiles.length;
+    }
+
+    function renderEliminated(){
+      var arr = Array.from(state.eliminated).sort(); var html="";
+      for (var i=0;i<arr.length;i++){ var ch=arr[i]; var classes=["tile","bad"]; if((state.usedInSlotsCounts[ch]||0)>0) classes.push("slash"); html += "<div class='"+classes.join(" ")+"'>"+ch+"</div>"; }
+      eliminatedLettersEl.innerHTML = html; eliminatedWrap.classList.toggle("hidden", arr.length===0); bumpTiles(eliminatedLettersEl);
+    }
+
+    function renderNotGuessed(){
+      var ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      var remaining = ALFA.filter(function(ch){ return !state.guessed.has(ch); });
+      var html=""; for (var i=0;i<remaining.length;i++){ var ch=remaining[i]; var classes=["tile","dim"]; if((state.usedInSlotsCounts[ch]||0)>0) classes.push("slash"); html += "<div class='"+classes.join(" ")+"'>"+ch+"</div>"; }
+      notGuessedLettersEl.innerHTML = html; notGuessedWrap.classList.toggle("hidden", remaining.length===26);
+    }
+
+    function addHistoryRow(guess, markers){
+      var row = document.createElement("div"); row.className = "guess-item";
+      var inner = document.createElement("div"); inner.className = "guess-row";
+      for (var i=0;i<guess.length;i++){
+        var col = document.createElement("div"); col.className="ltrCol";
+        var tile = document.createElement("div"); tile.className="ltr"; tile.textContent = guess[i];
+        var mk = document.createElement("div"); mk.className="marker";
+        var m = markers[i];
+        if (m.in){
+          var circ = document.createElement("div"); circ.className="circ"; circ.textContent = m.count;
+          mk.appendChild(circ);
         }else{
-          for (var i=n-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+          var x = document.createElement("div"); x.className="x"; mk.appendChild(x);
         }
-        return a;
+        col.appendChild(tile); col.appendChild(mk); inner.appendChild(col);
       }
-      function normalizeWords(list){
-        var out=[], seen={};
-        for (var i=0;i<list.length;i++){
-          var w=(list[i]||"").trim().toUpperCase();
-          if (w.length===TARGET_LEN && /^[A-Z]+$/.test(w) && !seen[w]){ seen[w]=1; out.push(w); }
-        }
-        return out;
-      }
-      function loadRecent(){
-        try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]"); }catch(_){ return []; }
-      }
-      function saveRecent(arr){ try{ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(-200))); }catch(_){ } }
-      function buildDeck(){ deck = WORDS.slice(); shuffleInPlace(deck); }
-      function drawNextWord(){
-        var recent = loadRecent();
-        if (!deck.length) buildDeck();
-        for (var tries=0; tries<deck.length; tries++){
-          var w = deck.pop();
-          if (recent.indexOf(w) === -1) { recent.push(w); saveRecent(recent); return w; }
-        }
-        buildDeck(); var w2=deck.pop(); recent.push(w2); saveRecent(recent); return w2;
-      }
-      async function loadWords(){
-        try{
-          var resp = await fetch("words7.txt", {cache:"no-store"});
-          if (!resp.ok) throw new Error("no words7.txt");
-          var txt = await resp.text();
-          var arr = txt.split(/\r?\n/).map(function(s){ return s.trim(); }).filter(Boolean);
-          WORDS = normalizeWords(arr);
-          if (WORDS.length < 50) throw new Error("too few words");
-        }catch(e){
-          WORDS = normalizeWords(BUILTIN_WORDS);
-        }
-        buildDeck();
-      }
+      row.appendChild(inner); historyEl.prepend(row);
+    }
 
-      // ===== Theme: LIGHT default, toggle dark =====
-      var THEME_KEY = "heptix_theme";
-      var themeToggle = document.getElementById("themeToggle");
-      var savedTheme = localStorage.getItem(THEME_KEY) || "light";
-      document.documentElement.setAttribute("data-theme", savedTheme);
-      themeToggle.checked = (savedTheme === "dark");
-      themeToggle.addEventListener("change", function(e){
-        var t = e.target.checked ? "dark" : "light";
-        document.documentElement.setAttribute("data-theme", t);
-        localStorage.setItem(THEME_KEY, t);
-      });
+    function validateProbeWord(g){ return g.length===3 && isAlpha(g); }
 
-      // ===== Sounds =====
-      var audioCtx = null, soundKey = "heptix_sound";
-      var soundOn = localStorage.getItem(soundKey) !== "off";
-      var soundToggle = document.getElementById("soundToggle");
-      soundToggle.checked = soundOn;
-      function getAudioCtx(){ if(!soundOn) return null; if(!audioCtx){ var Ctx = window.AudioContext||window.webkitAudioContext; if(!Ctx) return null; audioCtx = new Ctx(); } if(audioCtx&&audioCtx.state==="suspended") try{audioCtx.resume();}catch(_){ } return audioCtx; }
-      function setSound(on){ soundOn = on; localStorage.setItem(soundKey, on?"on":"off"); soundToggle.checked = on; }
-      document.addEventListener("keydown", function(e){ if((e.key||"").toLowerCase()==="m") setSound(!soundOn); });
-      soundToggle.addEventListener("change", function(e){ setSound(!!e.target.checked); });
-      function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
-      document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
+    function handleProbe(){
+      if (state.finished) return;
+      var g=(guess3El.value||"").trim().toUpperCase();
+      if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); guess3El.focus(); return; }
+      var counts = letterCounts(state.target); var markers=[];
+      for (var i=0;i<3;i++){ var ch=g[i]; state.guessed.add(ch);
+        if (state.target.indexOf(ch)!==-1){ markers.push({in:true,count:counts[ch]||1}); state.found.add(ch); state.eliminated.delete(ch); sfx.probeGood(); }
+        else { markers.push({in:false}); state.eliminated.add(ch); sfx.probeBad(); } }
+      addHistoryRow(g,markers); renderFound(); renderEliminated(); renderNotGuessed();
+      state.roundsUsed += 1; var left=state.maxProbeRounds - state.roundsUsed;
+      roundsLeftEl.textContent = left; status3El.innerHTML = left>0? "You have <b>"+left+"</b> probe rounds left." : "Probe phase complete.";
+      guess3El.value=""; guess3El.focus();
+    }
 
-      function chirp(startFreq,endFreq,dur,type,gain){
-        if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
-        var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
-        try{ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime+dur/1000); }catch(_){ o.frequency.setValueAtTime(startFreq, ctx.currentTime); o.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime+dur/1000); }
-        g.gain.setValueAtTime(gain, ctx.currentTime); try{ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }catch(_){ g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }
-        o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+dur/1000);
-      }
-      function whiteNoise(dur, gain, lpFreq){
-        if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return;
-        var bufferSize = Math.floor(ctx.sampleRate * dur);
-        var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        var data = buffer.getChannelData(0);
-        for (var i=0;i<bufferSize;i++){ data[i] = Math.random()*2-1; }
-        var src = ctx.createBufferSource(); src.buffer = buffer;
-        var g = ctx.createGain(); g.gain.setValueAtTime(gain, ctx.currentTime);
-        var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 2000;
-        src.connect(f).connect(g).connect(ctx.destination);
-        src.start(); src.stop(ctx.currentTime + dur);
-      }
-      var sfx = {
-        probeGood: function(){ chirp(520,800,120,"triangle",0.035); },
-        probeBad: function(){ chirp(240,160,140,"sine",0.035); },
-        place: function(){ chirp(520,540,60,"square",0.02); },
-        hint: function(){ chirp(740,1000,160,"triangle",0.03); },
-        winCheer: function(){ whiteNoise(1.6, 0.05, 2200);
-          [660, 880, 990, 1180, 1320].forEach(function(f,i){ setTimeout(function(){ chirp(f, f+80, 150, "triangle", 0.035); }, 110*i); });
-        }
-      };
-
-      // ===== Game state =====
-      var state = { target:"", found:new Set(), eliminated:new Set(), guessed:new Set(), roundsUsed:0, maxProbeRounds:5, finished:false, mode:"standard", difficulty:"normal", usedInSlotsCounts:{}, slots:Array(TARGET_LEN).fill(""), hintsUsed:0, hintsCap:3 };
-
-      // Helpers
-      function letterCounts(word){ var m={}; for (var i=0;i<word.length;i++){ var ch=word[i]; m[ch]=(m[ch]||0)+1; } return m; }
-      function isAlpha(str){ return /^[A-Za-z]+$/.test(str); }
-
-      // DOM
-      var historyEl = document.getElementById("history");
-      var roundsLeftEl = document.getElementById("roundsLeft");
-      var status3El = document.getElementById("status3");
-      var status10El = document.getElementById("status10");
-      var foundLettersEl = document.getElementById("foundLetters");
-      var foundCountEl = document.getElementById("foundCount");
-      var eliminatedLettersEl = document.getElementById("eliminatedLetters");
-      var notGuessedLettersEl = document.getElementById("notGuessedLetters");
-      var guess3El = document.getElementById("guess3");
-      var foundWrap = document.getElementById("foundWrap");
-      var eliminatedWrap = document.getElementById("eliminatedWrap");
-      var notGuessedWrap = document.getElementById("notGuessedWrap");
-      var slotsEl = document.getElementById("slots");
-      var hintBtn = document.getElementById("hintBtn");
-      var hintsUsedEl = document.getElementById("hintsUsed");
-      var hintsCapEl = document.getElementById("hintsCap");
-      var overlay = document.getElementById("overlay");
-      var overlayTitle = document.getElementById("overlayTitle");
-      var overlayMsg = document.getElementById("overlayMsg");
-      var closeOverlay = document.getElementById("closeOverlay");
-      var playAgain = document.getElementById("playAgain");
-      var revealBtn = document.getElementById("reveal");
-      var submitSolveBtn = document.getElementById("submitSolve");
-      var howButton = document.getElementById("howTo");
-      var howModal=document.getElementById("howtoModal"), howBody=document.getElementById("howtoBody");
-      var howPrev=document.getElementById("howtoPrev"), howNext=document.getElementById("howtoNext"), howClose=document.getElementById("howtoClose");
-      var howPage=0;
-
-      function applyDifficulty(d){
-        state.difficulty = d;
-        var cfg = { normal:{probes:5,hintCap:3}, hard:{probes:4,hintCap:1} }[d];
-        state.maxProbeRounds = cfg.probes; state.hintsCap = cfg.hintCap;
-        hintsCapEl.textContent = state.hintsCap;
-        roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
-        status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
-      }
-
-      function startNewGame(){
-        state.target = drawNextWord();
-        state.roundsUsed = 0; state.finished=false;
-        state.found.clear(); state.eliminated.clear(); state.guessed.clear();
-        state.usedInSlotsCounts = {}; state.slots = Array(TARGET_LEN).fill("");
-        state.hintsUsed = 0; hintsUsedEl.textContent = "0"; hintsCapEl.textContent = state.hintsCap;
-        historyEl.innerHTML=""; roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
-        status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
-        status10El.textContent = "You can type in the slots at any time.";
-        renderFound(); renderEliminated(); renderNotGuessed();
-        renderSlots(true); hintBtn.disabled=false;
-      }
-
-      function bumpTiles(container){ var tiles = container.querySelectorAll('.tile'); for (var i=0;i<tiles.length;i++){ (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); },110); })(tiles[i]); } }
-
-      function renderFound(){
-        var counts = letterCounts(state.target);
-        var arr = Array.from(state.found).sort(); var tiles = [];
-        if (state.mode === "standard"){ for (var i=0;i<arr.length;i++){ var ch=arr[i]; var n=counts[ch]||1; for (var j=0;j<n;j++) tiles.push(ch); } }
-        else { tiles = arr; }
-        var useCounts = Object.assign({}, state.usedInSlotsCounts); var html="";
-        for (var k=0;k<tiles.length;k++){ var c=tiles[k]; var classes=["tile"]; if((useCounts[c]||0)>0){ classes.push("slash"); useCounts[c]--; } html += "<div class='"+classes.join(" ")+"'>"+c+"</div>"; }
-        foundLettersEl.innerHTML = html; foundWrap.classList.toggle("hidden", tiles.length===0); bumpTiles(foundLettersEl);
-        foundCountEl.textContent = tiles.length;
-      }
-
-      function renderEliminated(){
-        var arr = Array.from(state.eliminated).sort(); var html="";
-        for (var i=0;i<arr.length;i++){ var ch=arr[i]; var classes=["tile","bad"]; if((state.usedInSlotsCounts[ch]||0)>0) classes.push("slash"); html += "<div class='"+classes.join(" ")+"'>"+ch+"</div>"; }
-        eliminatedLettersEl.innerHTML = html; eliminatedWrap.classList.toggle("hidden", arr.length===0); bumpTiles(eliminatedLettersEl);
-      }
-
-      function renderNotGuessed(){
-        var ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-        var remaining = ALFA.filter(function(ch){ return !state.guessed.has(ch); });
-        var html=""; for (var i=0;i<remaining.length;i++){ var ch=remaining[i]; var classes=["tile","dim"]; if((state.usedInSlotsCounts[ch]||0)>0) classes.push("slash"); html += "<div class='"+classes.join(" ")+"'>"+ch+"</div>"; }
-        notGuessedLettersEl.innerHTML = html; notGuessedWrap.classList.toggle("hidden", remaining.length===26);
-      }
-
-      // New: clearer per-letter feedback row
-      function addHistoryRow(guess, markers){
-        var row = document.createElement("div"); row.className = "guess-item";
-        var inner = document.createElement("div"); inner.className = "guess-row";
-        for (var i=0;i<guess.length;i++){
-          var col = document.createElement("div"); col.className="ltrCol";
-          var tile = document.createElement("div"); tile.className="ltr"; tile.textContent = guess[i];
-          var mk = document.createElement("div"); mk.className="marker";
-          var m = markers[i];
-          if (m.in){
-            var circ = document.createElement("div"); circ.className="circ"; circ.textContent = m.count;
-            mk.appendChild(circ);
-          }else{
-            var x = document.createElement("div"); x.className="x"; mk.appendChild(x);
-          }
-          col.appendChild(tile); col.appendChild(mk); inner.appendChild(col);
-        }
-        row.appendChild(inner); historyEl.prepend(row);
-      }
-
-      function validateProbeWord(g){ return g.length===3 && isAlpha(g); }
-
-      function handleProbe(){
-        if (state.finished) return;
-        var g=(guess3El.value||"").trim().toUpperCase();
-        if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); guess3El.focus(); return; }
-        var counts = letterCounts(state.target); var markers=[];
-        for (var i=0;i<3;i++){ var ch=g[i]; state.guessed.add(ch);
-          if (state.target.indexOf(ch)!==-1){ markers.push({in:true,count:counts[ch]||1}); state.found.add(ch); state.eliminated.delete(ch); sfx.probeGood(); }
-          else { markers.push({in:false}); state.eliminated.add(ch); sfx.probeBad(); } }
-        addHistoryRow(g,markers); renderFound(); renderEliminated(); renderNotGuessed();
-        state.roundsUsed += 1; var left=state.maxProbeRounds - state.roundsUsed;
-        roundsLeftEl.textContent = left; status3El.innerHTML = left>0? "You have <b>"+left+"</b> probe rounds left." : "Probe phase complete.";
-        guess3El.value=""; guess3El.focus();
-      }
-
-      function renderSlots(focusFirst){
-        slotsEl.innerHTML="";
-        for (var i=0;i<TARGET_LEN;i++){ (function(idx){
-          var slot=document.createElement("div"); slot.className="slot";
-          var input=document.createElement("input");
-          input.setAttribute("maxlength","1"); input.setAttribute("inputmode","text");
-          input.setAttribute("autocomplete","off"); input.setAttribute("autocapitalize","characters");
-          input.setAttribute("spellcheck","false"); input.value = state.slots[idx];
-          slot.addEventListener("click", function(){ input.focus(); });
-          input.addEventListener("input", function(e){
-            var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
-            e.target.value=v; state.slots[idx]=v; sfx.place();
-            recomputeUsedInSlotsCounts(); checkSolved();
-            if (v && idx<TARGET_LEN-1){ var next=slotsEl.children[idx+1].querySelector("input"); if(next) next.focus(); }
-          });
-          input.addEventListener("keydown", function(e){
-            if (e.key==="Backspace" && !e.target.value && idx>0){ var prev=slotsEl.children[idx-1].querySelector("input"); if(prev) prev.focus(); }
-            if (e.key==="ArrowLeft" && idx>0){ var prev2=slotsEl.children[idx-1].querySelector("input"); if(prev2) prev2.focus(); }
-            if (e.key==="ArrowRight" && idx<TARGET_LEN-1){ var next2=slotsEl.children[idx+1].querySelector("input"); if(next2) next2.focus(); }
-          });
-          slot.appendChild(input); var line=document.createElement("div"); line.className="line"; slot.appendChild(line); slotsEl.appendChild(slot);
-        })(i); }
-        if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.focus(); }
-      }
-
-      function clearSlots(){
-        for (var i=0;i<TARGET_LEN;i++){
-          state.slots[i] = "";
-          var input = slotsEl.children[i].querySelector("input"); if (input){ input.value=""; }
-        }
-        recomputeUsedInSlotsCounts();
-      }
-
-      function recomputeUsedInSlotsCounts(){
-        state.usedInSlotsCounts={}; for (var i=0;i<state.slots.length;i++){ var ch=state.slots[i]; if(ch) state.usedInSlotsCounts[ch]=(state.usedInSlotsCounts[ch]||0)+1; }
-        renderFound(); renderEliminated(); renderNotGuessed();
-      }
-
-      function updateHintState(){ hintsUsedEl.textContent=String(state.hintsUsed); hintsCapEl.textContent=String(state.hintsCap); }
-
-      function hint(){
-        var emptyIdx=[]; for (var i=0;i<TARGET_LEN;i++){ if(!state.slots[i]) emptyIdx.push(i); }
-        if (emptyIdx.length===0){ status10El.textContent="All slots are filled."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
-        if (state.hintsUsed>=state.hintsCap){ status10El.textContent="No hints remaining."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
-        var idx=emptyIdx[Math.floor(Math.random()*emptyIdx.length)]; var letter=state.target[idx];
-        var input=slotsEl.children[idx].querySelector("input");
-        if (input){
-          input.focus();
-          input.value = letter;
-          var ev = new Event('input', {bubbles:true});
-          input.dispatchEvent(ev);
-          sfx.hint();
-          state.hintsUsed+=1; updateHintState();
-          setTimeout(function(){
-            for (var k=idx+1;k<state.slots.length;k++){
-              var nxt = slotsEl.children[k].querySelector("input");
-              if (nxt && !nxt.value){ nxt.focus(); break; }
-            }
-          }, 0);
-        }
-      }
-
-      function reveal(){
-        for (var i=0;i<TARGET_LEN;i++){ state.slots[i]=state.target[i]; var input=slotsEl.children[i].querySelector("input"); if(input){ input.value=state.target[i]; } }
-        state.guessed = new Set(state.target.split("")); state.found = new Set(state.target.split(""));
-        recomputeUsedInSlotsCounts();
-        overlayTitle.textContent = "Better luck next time";
-        overlayMsg.innerHTML = "The target was <b>"+state.target+"</b>.";
-        overlay.classList.add('show');
-      }
-
-      function currentGuess(){ return state.slots.join(""); }
-      function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); }
-      function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.winCheer(); launchConfetti(document.querySelector('.app')); }
-      function launchConfetti(root){
-        var colors=["#1A73E8","#4FC3F7","#10B981","#6C63FF","#F59E0B"];
-        for (var i=0;i<90;i++){ var c=document.createElement('div'); c.className='confetti';
-          c.style.left=(Math.random()*100)+'%'; c.style.background=colors[Math.floor(Math.random()*colors.length)];
-          c.style.transform='translateY(-10px) rotate('+(Math.random()*360)+'deg)';
-          c.style.animation='fall '+(2+Math.random()*2)+'s linear '+(Math.random()*0.8)+'s forwards';
-          root.appendChild(c); (function(el){ setTimeout(function(){ el.remove(); },4000); })(c); }
-      }
-
-      function checkSolved(){ if (currentGuess().length===TARGET_LEN && currentGuess()===state.target){ celebrate(); } }
-
-      function submitSolve(){
-        var guess=currentGuess();
-        if (guess.length<TARGET_LEN){ status10El.textContent="Finish all 7 letters, then Submit."; shakeSlots(); return; }
-        if (guess===state.target){ celebrate(); return; }
-        var prevGuessed = new Set(state.guessed);
-        var u={}; for (var i=0;i<guess.length;i++) u[guess[i]]=true;
-        Object.keys(u).forEach(function(ch){
-          if (!prevGuessed.has(ch)){
-            state.guessed.add(ch);
-            if (state.target.indexOf(ch)===-1){ state.eliminated.add(ch); } else { state.found.add(ch); }
-          }
+    function renderSlots(focusFirst){
+      slotsEl.innerHTML="";
+      for (var i=0;i<TARGET_LEN;i++){ (function(idx){
+        var slot=document.createElement("div"); slot.className="slot";
+        var input=document.createElement("input");
+        input.setAttribute("maxlength","1"); input.setAttribute("inputmode","text");
+        input.setAttribute("autocomplete","off"); input.setAttribute("autocapitalize","characters");
+        input.setAttribute("spellcheck","false"); input.value = state.slots[idx];
+        slot.addEventListener("click", function(){ input.focus(); });
+        input.addEventListener("input", function(e){
+          var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
+          e.target.value=v; state.slots[idx]=v; sfx.place();
+          recomputeUsedInSlotsCounts(); checkSolved();
+          if (v && idx<TARGET_LEN-1){ var next=slotsEl.children[idx+1].querySelector("input"); if(next) next.focus(); }
         });
-        renderFound(); renderEliminated(); renderNotGuessed();
-        status10El.innerHTML = "<span class='warning'>Incorrect guess. New letters not in the word were eliminated.</span>";
-        clearSlots();
-        shakeSlots();
-      }
+        input.addEventListener("keydown", function(e){
+          if (e.key==="Backspace" && !e.target.value && idx>0){ var prev=slotsEl.children[idx-1].querySelector("input"); if(prev) prev.focus(); }
+          if (e.key==="ArrowLeft" && idx>0){ var prev2=slotsEl.children[idx-1].querySelector("input"); if(prev2) prev2.focus(); }
+          if (e.key==="ArrowRight" && idx<TARGET_LEN-1){ var next2=slotsEl.children[idx+1].querySelector("input"); if(next2) next2.focus(); }
+        });
+        slot.appendChild(input); var line=document.createElement("div"); line.className="line"; slot.appendChild(line); slotsEl.appendChild(slot);
+      })(i); }
+      if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.focus(); }
+    }
 
-      // How-to pages
-      function renderHow(){
-        if (howPage===0){
-          // Page 1: Probe basics + tip about not repeating letters
-          howBody.innerHTML = `
-            <b>Probe Rounds (1–5):</b><br/>
-            Enter 3-letter words to scout the target. Each letter shows if it exists in the word.
-            <div class="how-visual">
-              <div class="fake-shot">
-                <div class="fake-title">Example probe</div>
-                <div class="fake-row">
-                  <div class="fake-slot">C</div>
-                  <div class="fake-slot">A</div>
-                  <div class="fake-slot">T</div>
-                </div>
-                <div style="margin-top:8px;display:flex;gap:12px;align-items:center;">
-                  <span class="circ">1</span> <span class="muted">= letter is in target (count shown in Standard)</span>
-                  <span class="x"></span> <span class="muted">= letter not in target</span>
-                </div>
-              </div>
-            </div>
-            <div style="margin-top:10px; color:var(--muted);"><b>Tip:</b> It's best <b>not to repeat the same letter</b> during probe rounds — you’ll get more coverage.</div>
-          `;
-          howNext.style.display = "";
-        } else if (howPage===1){
-          // Page 2: Solve
-          howBody.innerHTML = `
-            <b>Round 6 (Solve):</b><br/>
-            Type into the 7 lines. Focus auto-advances. Use <b>Hint</b> to place a correct letter. Submit checks the word and clears slots if wrong. Reveal shows the answer without a win.
-            <div class="how-visual">
-              <div class="fake-shot">
-                <div class="fake-title">Solve layout</div>
-                <div class="fake-row" style="gap:10px;">
-                  ${Array.from({length:7}).map(()=>'<div class="fake-slot" style="height:30px;">&nbsp;</div>').join('')}
-                </div>
-              </div>
-            </div>
-          `;
-          howNext.style.display = "";
-        } else {
-          // Page 3: Modes & difficulty
-          howBody.innerHTML = `
-            <b>Modes & Difficulty:</b><br/>
-            <ul>
-              <li><b>Standard mode</b>: shows repeated-letter counts during probes.</li>
-              <li><b>Insane mode</b>: hides repeated-letter counts during probes.</li>
-              <li><b>Normal difficulty</b>: 5 probe rounds, <b>3 hints</b>.</li>
-              <li><b>Hard difficulty</b>: 4 probe rounds, <b>1 hint</b>.</li>
-            </ul>
-            <div class="how-visual">
-              <div class="fake-shot">
-                <div class="fake-title">Mode & difficulty controls</div>
-                <div class="fake-row">
-                  <div class="fake-slot" style="width:160px">Mode: Standard ▾</div>
-                  <div class="fake-slot" style="width:200px">Difficulty: Normal ▾</div>
-                </div>
-              </div>
-            </div>
-          `;
-          howNext.style.display = "none";
+    function clearSlots(){
+      for (var i=0;i<TARGET_LEN;i++){
+        state.slots[i] = "";
+        var input = slotsEl.children[i].querySelector("input"); if (input){ input.value=""; }
+      }
+      recomputeUsedInSlotsCounts();
+    }
+
+    function recomputeUsedInSlotsCounts(){
+      state.usedInSlotsCounts={}; for (var i=0;i<state.slots.length;i++){ var ch=state.slots[i]; if(ch) state.usedInSlotsCounts[ch]=(state.usedInSlotsCounts[ch]||0)+1; }
+      renderFound(); renderEliminated(); renderNotGuessed();
+    }
+
+    function updateHintState(){ hintsUsedEl.textContent=String(state.hintsUsed); hintsCapEl.textContent=String(state.hintsCap); }
+
+    function hint(){
+      var emptyIdx=[]; for (var i=0;i<TARGET_LEN;i++){ if(!state.slots[i]) emptyIdx.push(i); }
+      if (emptyIdx.length===0){ status10El.textContent="All slots are filled."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
+      if (state.hintsUsed>=state.hintsCap){ status10El.textContent="No hints remaining."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
+      var idx=emptyIdx[Math.floor(Math.random()*emptyIdx.length)]; var letter=state.target[idx];
+      var input=slotsEl.children[idx].querySelector("input");
+      if (input){
+        input.focus();
+        input.value = letter;
+        var ev = new Event('input', {bubbles:true});
+        input.dispatchEvent(ev);
+        sfx.hint();
+        state.hintsUsed+=1; updateHintState();
+        setTimeout(function(){
+          for (var k=idx+1;k<state.slots.length;k++){
+            var nxt = slotsEl.children[k].querySelector("input");
+            if (nxt && !nxt.value){ nxt.focus(); break; }
+          }
+        }, 0);
+      }
+    }
+
+    function reveal(){
+      for (var i=0;i<TARGET_LEN;i++){ state.slots[i]=state.target[i]; var input=slotsEl.children[i].querySelector("input"); if(input){ input.value=state.target[i]; } }
+      state.guessed = new Set(state.target.split("")); state.found = new Set(state.target.split(""));
+      recomputeUsedInSlotsCounts();
+      overlayTitle.textContent = "Better luck next time";
+      overlayMsg.innerHTML = "The target was <b>"+state.target+"</b>.";
+      overlay.classList.add('show');
+    }
+
+    function currentGuess(){ return state.slots.join(""); }
+    function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); }
+    function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.winCheer(); launchConfetti(document.querySelector('.app')); }
+    function launchConfetti(root){
+      var colors=["#1A73E8","#4FC3F7","#10B981","#6C63FF","#F59E0B"];
+      for (var i=0;i<90;i++){ var c=document.createElement('div'); c.className='confetti';
+        c.style.left=(Math.random()*100)+'%'; c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.transform='translateY(-10px) rotate('+(Math.random()*360)+'deg)';
+        c.style.animation='fall '+(2+Math.random()*2)+'s linear '+(Math.random()*0.8)+'s forwards';
+        root.appendChild(c); (function(el){ setTimeout(function(){ el.remove(); },4000); })(c); }
+    }
+
+    function checkSolved(){ if (currentGuess().length===TARGET_LEN && currentGuess()===state.target){ celebrate(); } }
+
+    function submitSolve(){
+      var guess=currentGuess();
+      if (guess.length<TARGET_LEN){ status10El.textContent="Finish all 7 letters, then Submit."; shakeSlots(); return; }
+      if (guess===state.target){ celebrate(); return; }
+      var prevGuessed = new Set(state.guessed);
+      var u={}; for (var i=0;i<guess.length;i++) u[guess[i]]=true;
+      Object.keys(u).forEach(function(ch){
+        if (!prevGuessed.has(ch)){
+          state.guessed.add(ch);
+          if (state.target.indexOf(ch)===-1){ state.eliminated.add(ch); } else { state.found.add(ch); }
         }
+      });
+      renderFound(); renderEliminated(); renderNotGuessed();
+      status10El.innerHTML = "<span class='warning'>Incorrect guess. New letters not in the word were eliminated.</span>";
+      clearSlots();
+      shakeSlots();
+    }
+
+    // How-to pages
+    function renderHow(){
+      if (howPage===0){
+        howBody.innerHTML = `
+          <b>Probe Rounds (1–5):</b><br/>
+          Enter 3-letter words to scout the target. Each letter shows if it exists in the word.
+          <div class="how-visual">
+            <div class="fake-shot">
+              <div class="fake-title">Example probe</div>
+              <div class="fake-row">
+                <div class="fake-slot">C</div>
+                <div class="fake-slot">A</div>
+                <div class="fake-slot">T</div>
+              </div>
+              <div style="margin-top:8px;display:flex;gap:12px;align-items:center;">
+                <span class="circ">1</span> <span class="muted">= letter is in target (count shown in Standard)</span>
+                <span class="x"></span> <span class="muted">= letter not in target</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:10px; color:var(--muted);"><b>Tip:</b> It's best <b>not to repeat the same letter</b> during probe rounds — you’ll get more coverage.</div>
+        `;
+        howNext.style.display = "";
+      } else if (howPage===1){
+        howBody.innerHTML = `
+          <b>Round 6 (Solve):</b><br/>
+          Type into the 7 lines. Focus auto-advances. Use <b>Hint</b> to place a correct letter. Submit checks the word and clears slots if wrong. Reveal shows the answer without a win.
+          <div class="how-visual">
+            <div class="fake-shot">
+              <div class="fake-title">Solve layout</div>
+              <div class="fake-row" style="gap:10px;">
+                ${Array.from({length:7}).map(()=>'<div class="fake-slot" style="height:30px;">&nbsp;</div>').join('')}
+              </div>
+            </div>
+          </div>
+        `;
+        howNext.style.display = "";
+      } else {
+        howBody.innerHTML = `
+          <b>Modes & Difficulty:</b><br/>
+          <ul>
+            <li><b>Standard mode</b>: shows repeated-letter counts during probes.</li>
+            <li><b>Insane mode</b>: hides repeated-letter counts during probes.</li>
+            <li><b>Normal difficulty</b>: 5 probe rounds, <b>3 hints</b>.</li>
+            <li><b>Hard difficulty</b>: 4 probe rounds, <b>1 hint</b>.</li>
+          </ul>
+          <div class="how-visual">
+            <div class="fake-shot">
+              <div class="fake-title">Mode & difficulty controls</div>
+              <div class="fake-row">
+                <div class="fake-slot" style="width:160px">Mode: Standard ▾</div>
+                <div class="fake-slot" style="width:200px">Difficulty: Normal ▾</div>
+              </div>
+            </div>
+          </div>
+        `;
+        howNext.style.display = "none";
       }
-      document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); document.getElementById("howtoModal").classList.add("show"); });
-      document.getElementById("howtoClose").addEventListener("click", function(){ document.getElementById("howtoModal").classList.remove("show"); });
-      document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
-      document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(2,howPage+1); renderHow(); });
+    }
+    document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); howModal.classList.add("show"); });
+    document.getElementById("howtoClose").addEventListener("click", function(){ howModal.classList.remove("show"); });
+    document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
+    document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(2,howPage+1); renderHow(); });
 
-      // Events
-      document.getElementById("newGame").addEventListener("click", function(){ startNewGame(); });
-      document.getElementById("submit3").addEventListener("click", function(e){ e.preventDefault(); handleProbe(); });
-      document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key==="Enter") handleProbe(); });
-      document.getElementById("reveal").addEventListener("click", reveal);
-      document.getElementById("submitSolve").addEventListener("click", submitSolve);
-      document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
-      document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
-      document.getElementById("hintBtn").addEventListener("click", hint);
+    // Splash: show once per session
+    function showSplash(){ splash.hidden=false; }
+    function hideSplash(){ splash.hidden=true; }
+    document.getElementById("splashNew").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); startNewGame(); });
+    document.getElementById("splashHow").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); howPage=0; renderHow(); howModal.classList.add("show"); });
 
-      // Splash actions
-      var splash = document.getElementById("brandSplash");
-      document.getElementById("splashNew").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); splash.style.display="none"; startNewGame(); });
-      document.getElementById("splashHow").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); splash.style.display="none"; howPage=0; renderHow(); document.getElementById("howtoModal").classList.add("show"); });
+    // Mode selector & notice
+    var modeSelect = document.getElementById("modeSelect");
+    var modeNotice = document.getElementById("modeNotice");
+    modeSelect.addEventListener("change", function(){
+      state.mode = modeSelect.value;
+      modeNotice.classList.toggle("hidden", state.mode!=="insane");
+    });
 
-      // Mode selector & notice
-      var modeSelect = document.getElementById("modeSelect");
-      var modeNotice = document.getElementById("modeNotice");
-      modeSelect.addEventListener("change", function(){
-        state.mode = modeSelect.value;
-        modeNotice.classList.toggle("hidden", state.mode!=="insane");
-      });
+    // Difficulty selector
+    var difficultySelect = document.getElementById("difficultySelect");
+    difficultySelect.addEventListener("change", function(){
+      applyDifficulty(difficultySelect.value);
+    });
 
-      // Difficulty selector
-      var difficultySelect = document.getElementById("difficultySelect");
-      difficultySelect.addEventListener("change", function(){
-        applyDifficulty(difficultySelect.value);
-      });
-
-      // Init
-      loadWords().then(function(){ applyDifficulty("normal"); if (sessionStorage.getItem("heptix_splash_seen")==="1"){ document.getElementById("brandSplash").style.display="none"; startNewGame(); } });
+    // Init with safe order
+    (async function init(){
+      // Theme default
+      document.documentElement.setAttribute("data-theme", localStorage.getItem("heptix_theme")||"light");
+      // Load words first
+      await loadWords();
+      applyDifficulty("normal");
+      // Splash logic
+      if (sessionStorage.getItem("heptix_splash_seen")==="1"){
+        hideSplash(); startNewGame();
+      }else{
+        showSplash();
+      }
     })();
+  });
   </script>
 </body>
 </html>
