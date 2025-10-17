@@ -24,7 +24,7 @@
       --success-bg:#10211B; --success-ink:#90FFE0; --notice-bg:#0F1426; --notice-ink:#DDE9FF;
     }
     *{box-sizing:border-box}
-    body{
+    body{-webkit-text-size-adjust:100%;
       margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background: radial-gradient(1000px 600px at 50% -8%, var(--tile-alt) 0%, var(--bg) 60%);
       color:var(--ink); min-height:100vh; display:grid; place-items:start center; padding:20px;
@@ -107,7 +107,7 @@
     .modal.show{ display:flex; }
     .modal-card{ width:min(820px, 95vw); background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:14px; padding:18px; box-shadow: var(--glow); }
     .modal-card h3{ margin:0 0 10px 0; }
-    .modal-body{ min-height:220px; line-height:1.6; color:var(--muted); }
+    .modal-body{-webkit-text-size-adjust:100%; min-height:220px; line-height:1.6; color:var(--muted); }
     .modal-footer{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
     .how-visual{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:12px; }
     .how-visual .fake-shot{ width:100%; border:1px solid var(--border); border-radius:12px; background: var(--tile); padding:12px; box-shadow: var(--glow-soft); }
@@ -120,7 +120,28 @@
     .logo-hero .seven{ font-size:52px; line-height:1; color:var(--accent); transform: translateY(2px); text-shadow: var(--glow-soft); }
     .tagline{ color:var(--muted); margin-top:8px; font-size:16px; }
     .brand-actions{ margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  </style>
+  
+/* ===== Small-screen polish (iPhone widths) ===== */
+@media (max-width: 420px){
+  header { gap: 6px; }
+  h1 { font-size: 20px; }
+  .controls { gap: 6px; }
+  .toggle, .group, .ghost { padding: 7px 9px; font-size: 12px; }
+  button { padding: 11px 12px; font-size: 14px; }
+  .panel { padding: 12px; }
+  .row { grid-template-columns: 120px 1fr; gap: 8px; }
+  input[type="text"] { font-size: 17px; letter-spacing: 1.5px; padding: 10px 10px; }
+  .letters .tile { width: 32px; height: 40px; }
+  .ltr { width: 36px; height: 42px; }
+  .slots { gap: 8px; }
+  .slot input { font-size: clamp(20px, 6vw, 30px); }
+  .brand-card { padding: 20px; }
+  .logo-hero { font-size: 32px; }
+  .logo-hero .seven { font-size: 46px; }
+  .brand-actions { gap: 8px; }
+}
+
+</style>
 </head>
 <body>
   <!-- Splash (first view) -->
@@ -174,7 +195,7 @@
         <div class="row">
           <label for="guess3">3-letter guess</label>
           <div style="display:flex; gap:8px; width:100%;">
-            <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off" autocapitalize="characters" spellcheck="false"/>
+            <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
             <button class="primary" id="submit3" type="button">Submit</button>
           </div>
         </div>
@@ -480,9 +501,13 @@
         var slot=document.createElement("div"); slot.className="slot";
         var input=document.createElement("input");
         input.setAttribute("maxlength","1"); input.setAttribute("inputmode","text");
-        input.setAttribute("autocomplete","off"); input.setAttribute("autocapitalize","characters");
-        input.setAttribute("spellcheck","false"); input.value = state.slots[idx];
+        input.setAttribute("autocomplete","off"); input.setAttribute("autocorrect","off"); input.setAttribute("autocapitalize","characters");
+        input.setAttribute("spellcheck","false"); input.setAttribute("tabindex","0"); input.value = state.slots[idx];
         slot.addEventListener("click", function(){ input.focus(); });
+          slot.addEventListener("touchstart", function(){ input.focus(); }, {passive:true});
+          input.addEventListener("focus", function(){ try{ input.setSelectionRange(0, 1); }catch(_){} });
+          input.addEventListener("click", function(){ try{ input.setSelectionRange(0, 1); }catch(_){} });
+
         input.addEventListener("input", function(e){
           var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
           e.target.value=v; state.slots[idx]=v; sfx.place();
