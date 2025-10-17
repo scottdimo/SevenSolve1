@@ -30,7 +30,8 @@
       color:var(--ink); min-height:100vh; display:grid; place-items:start center; padding:20px;
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
-    .app{ width:100%; max-width:980px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow: var(--glow); position:relative; overflow:hidden; }
+    .app{ width:100%; max-width:980px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow: var(--glow); position:relative; overflow:hidden; z-index:1; }
+
     header{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
     h1{ margin:0; font-size:24px; letter-spacing:.3px; display:flex; gap:10px; align-items:center; font-weight:800; text-shadow: var(--glow-soft); }
     .tag{font-size:12px; color:var(--muted); border:1px dashed var(--border); padding:2px 8px; border-radius:999px;}
@@ -39,7 +40,7 @@
     .ghost{ background:transparent; }
     .notice{ width:100%; background:var(--notice-bg); color:var(--notice-ink); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13px; margin-bottom:10px; box-shadow: var(--glow-soft); }
     button{ background: linear-gradient(180deg, var(--accent2), var(--accent)); color:#fff; border:1px solid transparent;
-      padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:.2px; transition:.15s ease; box-shadow: var(--glow-soft); }
+      padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:.2px; transition:.15s ease; box-shadow: var(--glow-soft); font-size:14px; }
     button:hover{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); transform: translateY(-1px); }
     button.primary{ background: linear-gradient(180deg, var(--accent), #3A8BF0); color:#fff; }
     button.purple{ background: linear-gradient(180deg, var(--accent2), #7FD9FF); color:#0A233D; }
@@ -87,11 +88,12 @@
       caret-color: var(--accent);
       -webkit-appearance:none; appearance:none;
       -webkit-text-fill-color: var(--ink);
-      font-size: clamp(22px, 5.2vw, 34px);
+      font-size: clamp(22px, 6vw, 34px);
       line-height: 1.15;
       padding: 2px 0 6px;
     }
     .slot .line{ position:relative; height:2px; background:var(--ink); opacity:.3; border-radius:2px; }
+
     .shake{ animation: shake .25s ease; }
     .overlay{ position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(900px 600px at 50% -10%, rgba(0,0,0,0.08), rgba(0,0,0,0.25)); pointer-events:none; opacity:0; transition: opacity .25s ease; }
     .overlay.show{ opacity:1; pointer-events:auto; }
@@ -107,51 +109,52 @@
     .modal.show{ display:flex; }
     .modal-card{ width:min(820px, 95vw); background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:14px; padding:18px; box-shadow: var(--glow); }
     .modal-card h3{ margin:0 0 10px 0; }
-    .modal-body{-webkit-text-size-adjust:100%; min-height:220px; line-height:1.6; color:var(--muted); }
+    .modal-body{ min-height:220px; line-height:1.6; color:var(--muted); }
     .modal-footer{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
     .how-visual{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:12px; }
     .how-visual .fake-shot{ width:100%; border:1px solid var(--border); border-radius:12px; background: var(--tile); padding:12px; box-shadow: var(--glow-soft); }
     .how-visual .fake-title{ font-weight:800; color:var(--ink); margin-bottom:8px; }
     .how-visual .fake-row{ display:flex; gap:8px; }
     .how-visual .fake-slot{ flex:1; height:44px; background:var(--panel); border:1px solid var(--border); border-radius:8px; display:grid; place-items:center; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .brand-splash{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: radial-gradient(1200px 800px at 50% -12%, var(--tile-alt) 0%, var(--bg) 70%); z-index:50; }
+
+    /* Splash */
+    .brand-splash{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: radial-gradient(1200px 800px at 50% -12%, var(--tile-alt) 0%, var(--bg) 70%); z-index:10000; }
     .brand-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:26px; width:min(760px,92vw); text-align:center; box-shadow: var(--glow); }
     .logo-hero{ font-weight:900; font-size:38px; letter-spacing:.02em; color:var(--ink); display:flex; gap:10px; align-items:flex-end; justify-content:center; }
     .logo-hero .seven{ font-size:52px; line-height:1; color:var(--accent); transform: translateY(2px); text-shadow: var(--glow-soft); }
     .tagline{ color:var(--muted); margin-top:8px; font-size:16px; }
     .brand-actions{ margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  
-/* ===== Small-screen polish (iPhone widths) ===== */
-@media (max-width: 420px){
-  header { gap: 6px; }
-  h1 { font-size: 20px; }
-  .controls { gap: 6px; }
-  .toggle, .group, .ghost { padding: 7px 9px; font-size: 12px; }
-  button { padding: 11px 12px; font-size: 14px; }
-  .panel { padding: 12px; }
-  .row { grid-template-columns: 120px 1fr; gap: 8px; }
-  input[type="text"] { font-size: 17px; letter-spacing: 1.5px; padding: 10px 10px; }
-  .letters .tile { width: 32px; height: 40px; }
-  .ltr { width: 36px; height: 42px; }
-  .slots { gap: 8px; }
-  .slot input { font-size: clamp(20px, 6vw, 30px); }
-  .brand-card { padding: 20px; }
-  .logo-hero { font-size: 32px; }
-  .logo-hero .seven { font-size: 46px; }
-  .brand-actions { gap: 8px; }
-}
 
-</style>
+    /* Small-screen polish */
+    @media (max-width: 420px){
+      header { gap: 6px; }
+      h1 { font-size: 20px; }
+      .controls { gap: 6px; }
+      .toggle, .group, .ghost { padding: 7px 9px; font-size: 12px; }
+      button { padding: 11px 12px; font-size: 14px; }
+      .panel { padding: 12px; }
+      .row { grid-template-columns: 120px 1fr; gap: 8px; }
+      input[type="text"] { font-size: 17px; letter-spacing: 1.5px; padding: 10px 10px; }
+      .letters .tile { width: 32px; height: 40px; }
+      .ltr { width: 36px; height: 42px; }
+      .slots { gap: 8px; }
+      .slot input { font-size: clamp(20px, 6vw, 30px); }
+      .brand-card { padding: 20px; }
+      .logo-hero { font-size: 32px; }
+      .logo-hero .seven { font-size: 46px; }
+      .brand-actions { gap: 8px; }
+    }
+  </style>
 </head>
 <body>
   <!-- Splash (first view) -->
-  <div id="brandSplash" class="brand-splash" hidden>
+  <div id="brandSplash" class="brand-splash" aria-hidden="true">
     <div class="brand-card">
       <div class="logo-hero"><span class="seven">7</span> HEPTIX</div>
       <div class="tagline">A word game for pattern thinkers.</div>
       <div class="brand-actions">
-        <button id="splashHow" class="cta">How to play</button>
-        <button id="splashNew" class="primary">New Game</button>
+        <button id="splashHow" class="cta" onclick="window.splashHow && window.splashHow()">How to play</button>
+        <button id="splashNew" class="primary" onclick="window.splashStart && window.splashStart()">New Game</button>
       </div>
     </div>
   </div>
@@ -412,6 +415,10 @@
     var howPage=0;
     var splash = document.getElementById("brandSplash");
 
+    // Expose splash handlers as globals (fallback for inline onclick)
+    window.splashStart = function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); startNewGame(); };
+    window.splashHow = function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); howPage=0; renderHow(); howModal.classList.add("show"); };
+
     function applyDifficulty(d){
       state.difficulty = d;
       var cfg = { normal:{probes:5,hintCap:3}, hard:{probes:4,hintCap:1} }[d];
@@ -495,6 +502,16 @@
       guess3El.value=""; guess3El.focus();
     }
 
+    function focusNextEmpty(fromIdx){
+      for (var i=fromIdx+1;i<state.slots.length;i++){
+        if (!state.slots[i]){ var nxt=slotsEl.children[i].querySelector("input"); if (nxt){ nxt.focus(); try{nxt.setSelectionRange(0,1);}catch(_){ } } return; }
+      }
+      // none after, try from start
+      for (var j=0;j<state.slots.length;j++){
+        if (!state.slots[j]){ var nx=slotsEl.children[j].querySelector("input"); if (nx){ nx.focus(); try{nx.setSelectionRange(0,1);}catch(_){ } } return; }
+      }
+    }
+
     function renderSlots(focusFirst){
       slotsEl.innerHTML="";
       for (var i=0;i<TARGET_LEN;i++){ (function(idx){
@@ -504,21 +521,64 @@
         input.setAttribute("autocomplete","off"); input.setAttribute("autocorrect","off"); input.setAttribute("autocapitalize","characters");
         input.setAttribute("spellcheck","false"); input.setAttribute("tabindex","0"); input.value = state.slots[idx];
         slot.addEventListener("click", function(){ input.focus(); });
-          slot.addEventListener("touchstart", function(){ input.focus(); }, {passive:true});
-          input.addEventListener("focus", function(){ try{ input.setSelectionRange(0, 1); }catch(_){} });
-          input.addEventListener("click", function(){ try{ input.setSelectionRange(0, 1); }catch(_){} });
+        slot.addEventListener("touchstart", function(){ input.focus(); }, {passive:true});
+        input.addEventListener("focus", function(){ try{ input.setSelectionRange(0, 1); }catch(_){} });
+        input.addEventListener("click", function(){ try{ input.setSelectionRange(0, 1); }catch(_){} });
+
+        input.addEventListener("paste", function(e){
+          var text = (e.clipboardData || window.clipboardData).getData('text') || "";
+          text = text.toUpperCase().replace(/[^A-Z]/g,"");
+          if (!text) return;
+          e.preventDefault();
+          // distribute across slots starting at idx, preferring empty ones
+          var pos = idx;
+          for (var k=0;k<text.length && pos<state.slots.length;k++){
+            // find next empty or current
+            while (pos<state.slots.length && state.slots[pos]) pos++;
+            if (pos>=state.slots.length) break;
+            state.slots[pos] = text[k];
+            var ip = slotsEl.children[pos].querySelector("input"); if (ip){ ip.value = text[k]; }
+            pos++;
+          }
+          recomputeUsedInSlotsCounts(); checkSolved();
+          if (pos<state.slots.length){ var ip2=slotsEl.children[pos].querySelector("input"); if (ip2){ ip2.focus(); } }
+        });
 
         input.addEventListener("input", function(e){
           var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
-          e.target.value=v; state.slots[idx]=v; sfx.place();
+          if (v.length>1) v=v[0];
+          e.target.value=v;
+          state.slots[idx]=v;
+          sfx.place();
           recomputeUsedInSlotsCounts(); checkSolved();
-          if (v && idx<TARGET_LEN-1){ var next=slotsEl.children[idx+1].querySelector("input"); if(next) next.focus(); }
+          if (v){ focusNextEmpty(idx); }
         });
+
         input.addEventListener("keydown", function(e){
-          if (e.key==="Backspace" && !e.target.value && idx>0){ var prev=slotsEl.children[idx-1].querySelector("input"); if(prev) prev.focus(); }
-          if (e.key==="ArrowLeft" && idx>0){ var prev2=slotsEl.children[idx-1].querySelector("input"); if(prev2) prev2.focus(); }
-          if (e.key==="ArrowRight" && idx<TARGET_LEN-1){ var next2=slotsEl.children[idx+1].querySelector("input"); if(next2) next2.focus(); }
+          var key = e.key;
+          if (key==="Backspace"){
+            if (!e.target.value){
+              // go to previous filled slot, clear it
+              for (var p=idx-1;p>=0;p--){
+                var ip=slotsEl.children[p].querySelector("input");
+                if (ip){ ip.focus(); try{ip.setSelectionRange(0,1);}catch(_){ } break; }
+              }
+            } else {
+              e.target.value=""; state.slots[idx]=""; recomputeUsedInSlotsCounts();
+            }
+            return;
+          }
+          if (/^[a-zA-Z]$/.test(key)){
+            e.preventDefault();
+            var letter = key.toUpperCase();
+            // place here (overwrite) then jump to next empty automatically
+            e.target.value = letter; state.slots[idx]=letter; sfx.place(); recomputeUsedInSlotsCounts(); checkSolved();
+            focusNextEmpty(idx);
+          }
+          if (key==="ArrowLeft" && idx>0){ var prev2=slotsEl.children[idx-1].querySelector("input"); if(prev2) prev2.focus(); }
+          if (key==="ArrowRight" && idx<TARGET_LEN-1){ var next2=slotsEl.children[idx+1].querySelector("input"); if(next2) next2.focus(); }
         });
+
         slot.appendChild(input); var line=document.createElement("div"); line.className="line"; slot.appendChild(line); slotsEl.appendChild(slot);
       })(i); }
       if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.focus(); }
@@ -666,11 +726,12 @@
     document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
     document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(2,howPage+1); renderHow(); });
 
-    // Splash: show once per session
-    function showSplash(){ splash.hidden=false; }
-    function hideSplash(){ splash.hidden=true; }
-    document.getElementById("splashNew").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); startNewGame(); });
-    document.getElementById("splashHow").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); howPage=0; renderHow(); howModal.classList.add("show"); });
+    // Splash helpers
+    function showSplash(){ splash.style.display="flex"; splash.setAttribute("aria-hidden","false"); }
+    function hideSplash(){ splash.style.display="none"; splash.setAttribute("aria-hidden","true"); }
+    // Wire buttons (in addition to inline onclick fallbacks)
+    document.getElementById("splashNew").addEventListener("click", window.splashStart);
+    document.getElementById("splashHow").addEventListener("click", window.splashHow);
 
     // Mode selector & notice
     var modeSelect = document.getElementById("modeSelect");
@@ -679,6 +740,8 @@
       state.mode = modeSelect.value;
       modeNotice.classList.toggle("hidden", state.mode!=="insane");
     });
+    // Initial notice state
+    modeNotice.classList.toggle("hidden", true);
 
     // Difficulty selector
     var difficultySelect = document.getElementById("difficultySelect");
@@ -690,6 +753,8 @@
     (async function init(){
       // Theme default
       document.documentElement.setAttribute("data-theme", localStorage.getItem("heptix_theme")||"light");
+      // Pre-render slots so layout is visible
+      renderSlots(true);
       // Load words first
       await loadWords();
       applyDifficulty("normal");
@@ -699,6 +764,15 @@
       }else{
         showSplash();
       }
+      // Header buttons
+      document.getElementById("newGame").addEventListener("click", startNewGame);
+      document.getElementById("submit3").addEventListener("click", function(e){ e.preventDefault(); handleProbe(); });
+      document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key==="Enter") handleProbe(); });
+      document.getElementById("reveal").addEventListener("click", reveal);
+      document.getElementById("submitSolve").addEventListener("click", submitSolve);
+      document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
+      document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
+      document.getElementById("hintBtn").addEventListener("click", hint);
     })();
   });
   </script>
