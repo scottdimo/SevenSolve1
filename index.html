@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover"/>
-  <title>SevenSolve</title>
+  <title>Heptix</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <style>
     :root{
-      --bg:#f7fbff; --ink:#0b1230; --muted:#52607a; --panel:#ffffff; --border:rgba(10,18,48,.15);
-      --tile:#f1f6ff; --tile-alt:#eaf1ff; --accent:#0ea5e9; --accent2:#8b5cf6; --good:#10b981;
-      --bad:#9aa5b1; --warning:#f59e0b; --ring:rgba(14,165,233,.25);
-      --glow:0 0 12px rgba(14,165,233,.25), 0 0 24px rgba(139,92,246,.15);
-      --glow-soft:0 0 10px rgba(14,165,233,.18);
-      --success-bg:#e9fff7; --success-ink:#065f46; --notice-bg:#eef2ff; --notice-ink:#2030a0;
+      /* Bright Azure palette */
+      --bg:#EAF4FF; --ink:#0D1A2B; --muted:#52607A; --panel:#FFFFFF; --border:rgba(26,115,232,.18);
+      --tile:#F4F9FF; --tile-alt:#EEF6FF; --accent:#1A73E8; --accent2:#4FC3F7; --good:#10B981;
+      --bad:#EF4444; --warning:#F59E0B; --ring:rgba(26,115,232,.25);
+      --glow:0 0 14px rgba(26,115,232,.22), 0 0 28px rgba(79,195,247,.18);
+      --glow-soft:0 0 10px rgba(79,195,247,.22);
+      --success-bg:#E8FFF6; --success-ink:#065F46; --notice-bg:#F1F6FF; --notice-ink:#0D1A2B;
     }
     [data-theme="dark"]{
-      --bg:#070a14; --ink:#e8f2ff; --muted:#9bb3d1; --panel:#0d1324; --border:rgba(148,163,184,.18);
-      --tile:#0a1020; --tile-alt:#0b1226; --accent:#5ef0ff; --accent2:#b36bff; --good:#46ffb6;
-      --bad:#6b7a90; --warning:#ffd166; --ring:rgba(94,240,255,.35);
-      --glow:0 0 12px rgba(94,240,255,.35), 0 0 26px rgba(179,107,255,.25);
-      --glow-soft:0 0 12px rgba(94,240,255,.25);
-      --success-bg:#0f1d18; --success-ink:#8fffe0; --notice-bg:#0f1126; --notice-ink:#a6b6ff;
+      --bg:#0A0F1A; --ink:#EAF4FF; --muted:#A8B6CD; --panel:#0F1624; --border:rgba(148,163,184,.18);
+      --tile:#0E1522; --tile-alt:#0B1220; --accent:#5EC0FF; --accent2:#8BC8FF; --good:#46FFB6;
+      --bad:#FF6B6B; --warning:#FFD166; --ring:rgba(94,192,255,.35);
+      --glow:0 0 14px rgba(94,192,255,.28), 0 0 26px rgba(139,200,255,.22);
+      --glow-soft:0 0 12px rgba(94,192,255,.22);
+      --success-bg:#10211B; --success-ink:#90FFE0; --notice-bg:#0F1426; --notice-ink:#DDE9FF;
     }
+
     *{box-sizing:border-box}
     body{
       margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: radial-gradient(900px 520px at 50% -6%, var(--tile-alt) 0%, var(--bg) 60%);
+      background: radial-gradient(1000px 600px at 50% -8%, var(--tile-alt) 0%, var(--bg) 60%);
       color:var(--ink); min-height:100vh; display:grid; place-items:start center; padding:20px;
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
@@ -38,39 +40,40 @@
     .toggle,.group,.ghost{ display:inline-flex; gap:8px; align-items:center; background:var(--tile); border:1px solid var(--border); padding:8px 10px; border-radius:10px; font-size:13px; color:var(--muted); user-select:none; box-shadow: var(--glow-soft); }
     .ghost{ background:transparent; }
     .notice{ width:100%; background:var(--notice-bg); color:var(--notice-ink); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13px; margin-bottom:10px; box-shadow: var(--glow-soft); }
-    button{ background: linear-gradient(180deg, var(--tile-alt), var(--tile)); color:var(--ink); border:1px solid var(--border);
-      padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:700; letter-spacing:.2px; transition:.15s ease; box-shadow: var(--glow-soft); }
-    button:hover{ border-color:var(--accent); box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); }
-    button.primary{ background: linear-gradient(180deg, var(--accent), #74d1ff); color:#04121d; border-color: transparent; }
-    button.purple{ background: linear-gradient(180deg, var(--accent2), #8b5cf6); color:#fff; border-color: transparent; }
-    .cta{ background: linear-gradient(180deg, #22d3ee, #0ea5e9); color:#042433; border-color:transparent; }
+    button{ background: linear-gradient(180deg, var(--accent2), var(--accent)); color:#fff; border:1px solid transparent;
+      padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:.2px; transition:.15s ease; box-shadow: var(--glow-soft); }
+    button:hover{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); transform: translateY(-1px); }
+    button.primary{ background: linear-gradient(180deg, var(--accent), #3A8BF0); color:#fff; }
+    button.purple{ background: linear-gradient(180deg, var(--accent2), #7FD9FF); color:#0A233D; }
+    .cta{ background: linear-gradient(180deg, #7FD9FF, #1A73E8); color:#08253E; }
+
     .grid{ display:grid; grid-template-columns: 1fr; gap:16px; margin-top:8px; }
-    .panel{ background:var(--tile-alt); border:1px solid var(--border); border-radius:12px; padding:14px; box-shadow: var(--glow-soft); }
+    .panel{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; box-shadow: var(--glow-soft); }
     .section-title{ margin:0 0 10px 0; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; }
     .row{ display:grid; grid-template-columns: 160px 1fr; gap:10px; align-items:center; margin-top:6px; }
     .row label{ color:var(--muted); font-size:14px; }
     input[type="text"]{
-      width:100%; padding:12px 12px; background:var(--panel); color:var(--ink);
+      width:100%; padding:12px 12px; background:var(--tile); color:var(--ink);
       border:1px solid var(--border); border-radius:10px; outline:none; font-size:18px;
       letter-spacing:2px; text-transform:uppercase; transition: box-shadow .2s ease, transform .08s ease; box-shadow: var(--glow-soft);
       -webkit-text-fill-color: var(--ink);
     }
     input[type="text"]:focus{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); border-color:var(--accent); transform: translateY(-1px); }
     .history{ display:grid; gap:8px; }
-    .guess-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:var(--panel); border:1px solid var(--border); border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:2px; text-transform:uppercase; animation: pop .18s ease; box-shadow: var(--glow-soft); }
+    .guess-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:var(--tile); border:1px solid var(--border); border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:2px; text-transform:uppercase; animation: pop .18s ease; box-shadow: var(--glow-soft); }
     .badge{ display:inline-flex; gap:8px; align-items:center; font-size:13px; color:var(--muted); flex-wrap:wrap; }
-    .pill{ padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:var(--tile); letter-spacing:1px; display:inline-flex; gap:6px; align-items:center; position:relative; box-shadow: var(--glow-soft); }
-    .circ{ width:18px; height:18px; border-radius:999px; border:2px solid var(--good); display:inline-grid; place-items:center; font-size:11px; font-weight:800; }
+    .pill{ padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:var(--tile-alt); letter-spacing:1px; display:inline-flex; gap:6px; align-items:center; position:relative; box-shadow: var(--glow-soft); }
+    .circ{ width:18px; height:18px; border-radius:999px; border:2px solid var(--good); display:inline-grid; place-items:center; font-size:11px; font-weight:800; color:var(--good); }
     .x{ width:18px; height:18px; border-radius:3px; background:var(--bad); display:inline-block; position:relative; }
-    .x::before,.x::after{ content:""; position:absolute; left:50%; top:50%; width:12px; height:2px; background:#ffffff80; transform-origin:center; }
+    .x::before,.x::after{ content:""; position:absolute; left:50%; top:50%; width:12px; height:2px; background:#ffffff90; transform-origin:center; }
     .x::before{ transform: translate(-50%,-50%) rotate(45deg); } .x::after{ transform: translate(-50%,-50%) rotate(-45deg); }
     .status{ margin-top:6px; color:var(--muted); min-height:20px; }
     .letters{ display:flex; gap:6px; flex-wrap:wrap; }
-    .letters .tile{ position:relative; width:36px; height:44px; display:grid; place-items:center; border-radius:8px; background:var(--panel); border:1px solid var(--border); font-weight:800; letter-spacing:1px; transition: transform .08s ease, box-shadow .2s ease; box-shadow: var(--glow-soft); }
-    .letters .tile.dim{ opacity:.45; }
-    .letters .tile.bad{ border-color: rgba(255,0,0,.25); box-shadow: inset 0 0 0 2px rgba(255,0,0,0.12), var(--glow-soft); }
+    .letters .tile{ position:relative; width:36px; height:44px; display:grid; place-items:center; border-radius:8px; background:var(--tile); border:1px solid var(--border); font-weight:800; letter-spacing:1px; transition: transform .08s ease, box-shadow .2s ease; box-shadow: var(--glow-soft); }
+    .letters .tile.dim{ opacity:.5; }
+    .letters .tile.bad{ border-color: rgba(239,68,68,.25); box-shadow: inset 0 0 0 2px rgba(239,68,68,.14), var(--glow-soft); }
     .letters .tile.slash::after{ content:""; position:absolute; top:50%; left:10%; right:10%; height:2px; background: currentColor; transform: rotate(-24deg); }
-    .letters .tile.bump{ transform: scale(1.06); box-shadow: 0 0 14px rgba(14,165,233,.35); }
+    .letters .tile.bump{ transform: scale(1.06); box-shadow: 0 0 14px rgba(26,115,232,.35); }
     .footer{ margin-top:12px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; color:var(--muted); font-size:13px; }
     .hidden{ display:none !important; } .success{ color:var(--good); } .warning{ color:var(--warning); } .rowtitle{ font-size:13px; color:var(--muted); margin-top:10px; }
 
@@ -90,11 +93,11 @@
     }
     .slot .line{ position:relative; height:2px; background:var(--ink); opacity:.3; border-radius:2px; }
     .shake{ animation: shake .25s ease; }
-    .overlay{ position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(900px 600px at 50% -10%, rgba(0,0,0,0.10), rgba(0,0,0,0.40)); pointer-events:none; opacity:0; transition: opacity .25s ease; }
+    .overlay{ position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(900px 600px at 50% -10%, rgba(0,0,0,0.08), rgba(0,0,0,0.25)); pointer-events:none; opacity:0; transition: opacity .25s ease; }
     .overlay.show{ opacity:1; pointer-events:auto; }
-    .toast{ background: var(--success-bg); color: var(--success-ink); border:1px solid var(--good); padding:20px 18px; border-radius:14px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width:320px; text-align:center; animation: pop .22s ease; }
+    .toast{ background: var(--success-bg); color: var(--success-ink); border:1px solid var(--good); padding:20px 18px; border-radius:14px; box-shadow: 0 10px 40px rgba(0,0,0,0.12); min-width:320px; text-align:center; animation: pop .22s ease; }
     .toast h2{ margin:0 0 6px 0; font-size:22px; } .toast p{ margin:0; font-size:14px; color:inherit; opacity:.9; }
-    .confetti{ position:absolute; width:8px; height:14px; border-radius:2px; top:-10px; opacity:.9; }
+    .confetti{ position:absolute; width:8px; height:14px; border-radius:2px; top:-10px; opacity:.95; }
     @keyframes pop{ from{ transform: scale(.96); opacity:0;} to{ transform: scale(1); opacity:1;} }
     @keyframes fall{ to{ transform: translateY(110vh) rotate(360deg);} }
     @keyframes shake{ 0%{ transform: translateX(0);} 25%{ transform: translateX(-3px);} 50%{ transform: translateX(3px);} 75%{ transform: translateX(-2px);} 100%{ transform: translateX(0);} }
@@ -113,7 +116,7 @@
 <body>
   <div class="app">
     <header>
-      <h1>SevenSolve <span class="tag">prototype</span></h1>
+      <h1>Heptix <span class="tag">beta</span></h1>
       <div class="controls">
         <button id="howTo" class="cta">How to play</button>
         <button id="newGame" class="purple">New Game</button>
@@ -219,28 +222,25 @@
 
   <script>
     (function(){
-      // ===== Word library & randomization =====
       var TARGET_LEN = 7;
+
+      // ===== Word library & randomization =====
       var BUILTIN_WORDS = [
         "ANALOGY","APRICOT","ARCHIVE","BALANCE","CAPTURE","CRYSTAL","DIAGRAM","EMERALD",
         "GLACIER","GRANITE","HARVEST","HORIZON","INSIGHT","JOURNEY","KINGDOM","LECTURE",
         "LIBRARY","MYSTERY","ORCHARD","OUTCOME","PAINTER","PRAIRIE","RAINBOW","RESOLVE",
         "REVOLVE","SCHOLAR","SECURED","SEQUOIA","SERPENT","SINCERE","SPARKLE","STADIUM",
         "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS",
-        "ABSORBS","ACCOUNT","ACQUIRE","ADAPTED","ADJACENT","ADMIRER","ADVERSE","AERIALS",
-        "AEROBIC","AFFAIRS","AFFINITY","AGILITY","AIRFARE","ALARMED","ALCHEMY","ALERTED",
-        "ALIMONY","ALLELES","ALMANAC","ALREADY","AMALGAM","AMBIENT","AMPLIFY","ANCIENT",
-        "ANGLERS","ANIMATE","ANTHEMS","APPEASE","ARRANGE","ASCENDS","ASCRIBE","ASSERTS",
-        "ASTOUND","ATRIUMS","AUSPICE","AVARICE","AWKWARD","BACKING","BANDITS","BARGAIN",
-        "BARRIER","BASILIS","BATHERS","BEACONS","BEARING","BECOMES","BELONGS","BENEATH"
-      ]; // Curated fallback. Use words7.txt for a full set.
-
-      var WORDS = []; // final list in use
-      var deck = [];  // shuffled draw pile
-      var RECENT_KEY = "sevensolve_recent_targets_v1";
+        "ACCOUNT","ACQUIRE","ADAPTED","ADJACENT","ADMIRER","ADVERSE","AFFINITY","AGILITY",
+        "ALARMED","ALERTED","ALREADY","AMBIENT","ANCIENT","ANIMATE","APPEASE","ARRANGE",
+        "ASCENDS","ASSERTS","ASTOUND","AUSPICE","AVARICE","BACKING","BARGAIN","BARRIER",
+        "BEARING","BECOMES","BELONGS","BENEATH","BETRAYS","BRACING","BRIGHTE","BROCADE"
+      ];
+      var WORDS = [];
+      var deck = [];
+      var RECENT_KEY = "heptix_recent_targets_v1";
 
       function shuffleInPlace(a){
-        // crypto-strong-ish shuffle if available
         var n=a.length;
         if (window.crypto && crypto.getRandomValues){
           var arr = new Uint32Array(n); crypto.getRandomValues(arr);
@@ -250,7 +250,6 @@
         }
         return a;
       }
-
       function normalizeWords(list){
         var out=[], seen={};
         for (var i=0;i<list.length;i++){
@@ -259,32 +258,20 @@
         }
         return out;
       }
-
       function loadRecent(){
         try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]"); }catch(_){ return []; }
       }
       function saveRecent(arr){ try{ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(-200))); }catch(_){ } }
-
-      function buildDeck(){
-        deck = WORDS.slice();
-        shuffleInPlace(deck);
-      }
-
+      function buildDeck(){ deck = WORDS.slice(); shuffleInPlace(deck); }
       function drawNextWord(){
         var recent = loadRecent();
         if (!deck.length) buildDeck();
-        // Try to pull a word not in recent (up to a threshold of attempts)
         for (var tries=0; tries<deck.length; tries++){
           var w = deck.pop();
-          if (recent.indexOf(w) === -1) {
-            recent.push(w); saveRecent(recent); return w;
-          }
+          if (recent.indexOf(w) === -1) { recent.push(w); saveRecent(recent); return w; }
         }
-        // If all words were recent, reshuffle and just take last
-        buildDeck();
-        var w2 = deck.pop(); recent.push(w2); saveRecent(recent); return w2;
+        buildDeck(); var w2=deck.pop(); recent.push(w2); saveRecent(recent); return w2;
       }
-
       async function loadWords(){
         try{
           var resp = await fetch("words7.txt", {cache:"no-store"});
@@ -299,8 +286,8 @@
         buildDeck();
       }
 
-      // ===== Theme & audio =====
-      var THEME_KEY = "sevensolve_theme";
+      // ===== Theme: LIGHT default, toggle dark =====
+      var THEME_KEY = "heptix_theme";
       var themeToggle = document.getElementById("themeToggle");
       var savedTheme = localStorage.getItem(THEME_KEY) || "light";
       document.documentElement.setAttribute("data-theme", savedTheme);
@@ -311,7 +298,8 @@
         localStorage.setItem(THEME_KEY, t);
       });
 
-      var audioCtx = null, soundKey = "sevensolve_sound";
+      // ===== Sounds =====
+      var audioCtx = null, soundKey = "heptix_sound";
       var soundOn = localStorage.getItem(soundKey) !== "off";
       var soundToggle = document.getElementById("soundToggle");
       soundToggle.checked = soundOn;
@@ -322,6 +310,7 @@
       function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
       document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
 
+      // WebAudio helpers
       function chirp(startFreq,endFreq,dur,type,gain){
         if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
         var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
@@ -337,7 +326,7 @@
         for (var i=0;i<bufferSize;i++){ data[i] = Math.random()*2-1; }
         var src = ctx.createBufferSource(); src.buffer = buffer;
         var g = ctx.createGain(); g.gain.setValueAtTime(gain, ctx.currentTime);
-        var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 1800;
+        var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 2000;
         src.connect(f).connect(g).connect(ctx.destination);
         src.start(); src.stop(ctx.currentTime + dur);
       }
@@ -345,11 +334,14 @@
         probeGood: function(){ chirp(520,800,120,"triangle",0.035); },
         probeBad: function(){ chirp(240,160,140,"sine",0.035); },
         place: function(){ chirp(520,540,60,"square",0.02); },
-        hint: function(){ chirp(640,900,160,"triangle",0.03); },
-        winCorkCheer: function(){
-          whiteNoise(0.1, 0.12, 4000); chirp(180, 80, 90, "sine", 0.06);
-          setTimeout(function(){ whiteNoise(1.8, 0.04, 1800); }, 120);
-          [660,840,1020,1240,1480].forEach(function(f,i){ setTimeout(function(){ chirp(f, f+60, 140, "triangle", 0.035); }, 120*i); });
+        hint: function(){ chirp(740,1000,160,"triangle",0.03); },
+        // Updated: cheer only (no cork pop)
+        winCheer: function(){
+          // crowd swell via filtered white noise + rising arpeggio
+          whiteNoise(1.6, 0.05, 2200);
+          [660, 880, 990, 1180, 1320].forEach(function(f,i){
+            setTimeout(function(){ chirp(f, f+80, 150, "triangle", 0.035); }, 110*i);
+          });
         }
       };
 
@@ -357,7 +349,7 @@
       var state = { target:"", found:new Set(), eliminated:new Set(), guessed:new Set(), roundsUsed:0, maxProbeRounds:5, finished:false, mode:"standard", difficulty:"normal", usedInSlotsCounts:{}, slots:Array(TARGET_LEN).fill(""), hintsUsed:0, hintsCap:Infinity };
 
       // Helpers
-      function letterCounts(word){ var m={}; for(var i=0;i<word.length;i++){ var ch=word[i]; m[ch]=(m[ch]||0)+1; } return m; }
+      function letterCounts(word){ var m={}; for (var i=0;i<word.length;i++){ var ch=word[i]; m[ch]=(m[ch]||0)+1; } return m; }
       function isAlpha(str){ return /^[A-Za-z]+$/.test(str); }
 
       // DOM
@@ -412,12 +404,12 @@
         renderSlots(true); hintBtn.disabled=false;
       }
 
-      function bumpTiles(container){ var tiles = container.querySelectorAll('.tile'); for(var i=0;i<tiles.length;i++){ (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); },110); })(tiles[i]); } }
+      function bumpTiles(container){ var tiles = container.querySelectorAll('.tile'); for (var i=0;i<tiles.length;i++){ (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); },110); })(tiles[i]); } }
 
       function renderFound(){
         var counts = letterCounts(state.target);
         var arr = Array.from(state.found).sort(); var tiles = [];
-        if (state.mode === "standard"){ for(var i=0;i<arr.length;i++){ var ch=arr[i]; var n=counts[ch]||1; for(var j=0;j<n;j++) tiles.push(ch); } }
+        if (state.mode === "standard"){ for (var i=0;i<arr.length;i++){ var ch=arr[i]; var n=counts[ch]||1; for (var j=0;j<n;j++) tiles.push(ch); } }
         else { tiles = arr; }
         var useCounts = Object.assign({}, state.usedInSlotsCounts); var html="";
         for (var k=0;k<tiles.length;k++){ var c=tiles[k]; var classes=["tile"]; if((useCounts[c]||0)>0){ classes.push("slash"); useCounts[c]--; } html += "<div class='"+classes.join(" ")+"'>"+c+"</div>"; }
@@ -507,17 +499,14 @@
         if (emptyIdx.length===0){ status10El.textContent="All slots are filled."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
         if (state.hintsUsed>=state.hintsCap){ status10El.textContent="No hints remaining."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
         var idx=emptyIdx[Math.floor(Math.random()*emptyIdx.length)]; var letter=state.target[idx];
-        // Ensure the input is focused before setting value (iOS repaint quirk)
         var input=slotsEl.children[idx].querySelector("input");
         if (input){
           input.focus();
           input.value = letter;
-          // Trigger 'input' handling manually so state & UI sync
           var ev = new Event('input', {bubbles:true});
           input.dispatchEvent(ev);
           sfx.hint();
           state.hintsUsed+=1; updateHintState();
-          // Move focus to the next empty slot for convenience
           setTimeout(function(){
             for (var k=idx+1;k<state.slots.length;k++){
               var nxt = slotsEl.children[k].querySelector("input");
@@ -538,9 +527,9 @@
 
       function currentGuess(){ return state.slots.join(""); }
       function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); }
-      function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.winCorkCheer(); launchConfetti(document.querySelector('.app')); }
+      function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.winCheer(); launchConfetti(document.querySelector('.app')); }
       function launchConfetti(root){
-        var colors=["#22d3ee","#8b5cf6","#10b981","#f59e0b","#ef4444"];
+        var colors=["#1A73E8","#4FC3F7","#10B981","#6C63FF","#F59E0B"];
         for (var i=0;i<90;i++){ var c=document.createElement('div'); c.className='confetti';
           c.style.left=(Math.random()*100)+'%'; c.style.background=colors[Math.floor(Math.random()*colors.length)];
           c.style.transform='translateY(-10px) rotate('+(Math.random()*360)+'deg)';
@@ -568,7 +557,7 @@
         shakeSlots();
       }
 
-      // How-to pages with illustration (and no Next on page 2)
+      // How-to pages (updated colors retained)
       function renderHow(){
         if (howPage===0){
           howBody.innerHTML = `
@@ -579,7 +568,7 @@
                 <rect x="10" y="12" rx="10" ry="10" width="340" height="62" fill="none" stroke="var(--border)"/>
                 <g transform="translate(36,26)">
                   <circle cx="0" cy="16" r="12" fill="none" stroke="var(--good)" stroke-width="3"/>
-                  <text x="0" y="20" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">2</text>
+                  <text x="0" y="20" text-anchor="middle" font-size="12" font-weight="800" fill="var(--good)">2</text>
                   <text x="18" y="20" font-size="12" fill="var(--muted)">= letter appears twice</text>
                 </g>
                 <g transform="translate(200,26)">
@@ -624,7 +613,7 @@
       document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
       hintBtn.addEventListener("click", hint);
 
-      // Init: load words then start
+      // Init
       loadWords().then(function(){ applyDifficulty("normal"); startNewGame(); });
     })();
   </script>
