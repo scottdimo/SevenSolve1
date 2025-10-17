@@ -74,7 +74,7 @@
     .footer{ margin-top:12px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; color:var(--muted); font-size:13px; }
     .hidden{ display:none !important; } .success{ color:var(--good); } .warning{ color:var(--warning); } .rowtitle{ font-size:13px; color:var(--muted); margin-top:10px; }
 
-    /* ROUND 6 underline slots (no fixed height boxes) */
+    /* ROUND 6 underline slots */
     .slots{ display:grid; grid-template-columns: repeat(7, 1fr); gap:10px; margin-top:10px; }
     .slot{ position:relative; padding:6px 0 0; background:transparent; border:none; }
     .slot input{
@@ -84,7 +84,6 @@
       caret-color: var(--accent);
       -webkit-appearance:none; appearance:none;
       -webkit-text-fill-color: var(--ink);
-      /* Responsive font that fits on iPhone 15 Pro Max */
       font-size: clamp(22px, 5.2vw, 34px);
       line-height: 1.15;
       padding: 2px 0 6px;
@@ -220,16 +219,87 @@
 
   <script>
     (function(){
-      var WORDS = [
+      // ===== Word library & randomization =====
+      var TARGET_LEN = 7;
+      var BUILTIN_WORDS = [
         "ANALOGY","APRICOT","ARCHIVE","BALANCE","CAPTURE","CRYSTAL","DIAGRAM","EMERALD",
         "GLACIER","GRANITE","HARVEST","HORIZON","INSIGHT","JOURNEY","KINGDOM","LECTURE",
         "LIBRARY","MYSTERY","ORCHARD","OUTCOME","PAINTER","PRAIRIE","RAINBOW","RESOLVE",
         "REVOLVE","SCHOLAR","SECURED","SEQUOIA","SERPENT","SINCERE","SPARKLE","STADIUM",
-        "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS"
-      ];
-      var TARGET_LEN = 7;
+        "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS",
+        "ABSORBS","ACCOUNT","ACQUIRE","ADAPTED","ADJACENT","ADMIRER","ADVERSE","AERIALS",
+        "AEROBIC","AFFAIRS","AFFINITY","AGILITY","AIRFARE","ALARMED","ALCHEMY","ALERTED",
+        "ALIMONY","ALLELES","ALMANAC","ALREADY","AMALGAM","AMBIENT","AMPLIFY","ANCIENT",
+        "ANGLERS","ANIMATE","ANTHEMS","APPEASE","ARRANGE","ASCENDS","ASCRIBE","ASSERTS",
+        "ASTOUND","ATRIUMS","AUSPICE","AVARICE","AWKWARD","BACKING","BANDITS","BARGAIN",
+        "BARRIER","BASILIS","BATHERS","BEACONS","BEARING","BECOMES","BELONGS","BENEATH"
+      ]; // Curated fallback. Use words7.txt for a full set.
 
-      // Theme: LIGHT default
+      var WORDS = []; // final list in use
+      var deck = [];  // shuffled draw pile
+      var RECENT_KEY = "sevensolve_recent_targets_v1";
+
+      function shuffleInPlace(a){
+        // crypto-strong-ish shuffle if available
+        var n=a.length;
+        if (window.crypto && crypto.getRandomValues){
+          var arr = new Uint32Array(n); crypto.getRandomValues(arr);
+          for (var i=n-1;i>0;i--){ var j = arr[i] % (i+1); var t=a[i]; a[i]=a[j]; a[j]=t; }
+        }else{
+          for (var i=n-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+        }
+        return a;
+      }
+
+      function normalizeWords(list){
+        var out=[], seen={};
+        for (var i=0;i<list.length;i++){
+          var w=(list[i]||"").trim().toUpperCase();
+          if (w.length===TARGET_LEN && /^[A-Z]+$/.test(w) && !seen[w]){ seen[w]=1; out.push(w); }
+        }
+        return out;
+      }
+
+      function loadRecent(){
+        try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||"[]"); }catch(_){ return []; }
+      }
+      function saveRecent(arr){ try{ localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(-200))); }catch(_){ } }
+
+      function buildDeck(){
+        deck = WORDS.slice();
+        shuffleInPlace(deck);
+      }
+
+      function drawNextWord(){
+        var recent = loadRecent();
+        if (!deck.length) buildDeck();
+        // Try to pull a word not in recent (up to a threshold of attempts)
+        for (var tries=0; tries<deck.length; tries++){
+          var w = deck.pop();
+          if (recent.indexOf(w) === -1) {
+            recent.push(w); saveRecent(recent); return w;
+          }
+        }
+        // If all words were recent, reshuffle and just take last
+        buildDeck();
+        var w2 = deck.pop(); recent.push(w2); saveRecent(recent); return w2;
+      }
+
+      async function loadWords(){
+        try{
+          var resp = await fetch("words7.txt", {cache:"no-store"});
+          if (!resp.ok) throw new Error("no words7.txt");
+          var txt = await resp.text();
+          var arr = txt.split(/\r?\n/).map(function(s){ return s.trim(); }).filter(Boolean);
+          WORDS = normalizeWords(arr);
+          if (WORDS.length < 50) throw new Error("too few words");
+        }catch(e){
+          WORDS = normalizeWords(BUILTIN_WORDS);
+        }
+        buildDeck();
+      }
+
+      // ===== Theme & audio =====
       var THEME_KEY = "sevensolve_theme";
       var themeToggle = document.getElementById("themeToggle");
       var savedTheme = localStorage.getItem(THEME_KEY) || "light";
@@ -241,7 +311,6 @@
         localStorage.setItem(THEME_KEY, t);
       });
 
-      // Sounds
       var audioCtx = null, soundKey = "sevensolve_sound";
       var soundOn = localStorage.getItem(soundKey) !== "off";
       var soundToggle = document.getElementById("soundToggle");
@@ -253,7 +322,6 @@
       function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
       document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
 
-      // WebAudio helpers
       function chirp(startFreq,endFreq,dur,type,gain){
         if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
         var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
@@ -279,18 +347,16 @@
         place: function(){ chirp(520,540,60,"square",0.02); },
         hint: function(){ chirp(640,900,160,"triangle",0.03); },
         winCorkCheer: function(){
-          whiteNoise(0.1, 0.12, 4000);   // cork pop
-          chirp(180, 80, 90, "sine", 0.06);
-          setTimeout(function(){ whiteNoise(1.8, 0.04, 1800); }, 120); // cheer
+          whiteNoise(0.1, 0.12, 4000); chirp(180, 80, 90, "sine", 0.06);
+          setTimeout(function(){ whiteNoise(1.8, 0.04, 1800); }, 120);
           [660,840,1020,1240,1480].forEach(function(f,i){ setTimeout(function(){ chirp(f, f+60, 140, "triangle", 0.035); }, 120*i); });
         }
       };
 
-      // State
+      // ===== Game state =====
       var state = { target:"", found:new Set(), eliminated:new Set(), guessed:new Set(), roundsUsed:0, maxProbeRounds:5, finished:false, mode:"standard", difficulty:"normal", usedInSlotsCounts:{}, slots:Array(TARGET_LEN).fill(""), hintsUsed:0, hintsCap:Infinity };
 
       // Helpers
-      function randomChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
       function letterCounts(word){ var m={}; for(var i=0;i<word.length;i++){ var ch=word[i]; m[ch]=(m[ch]||0)+1; } return m; }
       function isAlpha(str){ return /^[A-Za-z]+$/.test(str); }
 
@@ -333,7 +399,7 @@
       }
 
       function startNewGame(){
-        state.target = randomChoice(WORDS);
+        state.target = drawNextWord();
         state.roundsUsed = 0; state.finished=false;
         state.found.clear(); state.eliminated.clear(); state.guessed.clear();
         state.usedInSlotsCounts = {}; state.slots = Array(TARGET_LEN).fill("");
@@ -407,7 +473,7 @@
           slot.addEventListener("click", function(){ input.focus(); });
           input.addEventListener("input", function(e){
             var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
-            e.target.value=v; state.slots[idx]=v;
+            e.target.value=v; state.slots[idx]=v; sfx.place();
             recomputeUsedInSlotsCounts(); checkSolved();
             if (v && idx<TARGET_LEN-1){ var next=slotsEl.children[idx+1].querySelector("input"); if(next) next.focus(); }
           });
@@ -438,12 +504,27 @@
 
       function hint(){
         var emptyIdx=[]; for (var i=0;i<TARGET_LEN;i++){ if(!state.slots[i]) emptyIdx.push(i); }
-        if (emptyIdx.length===0){ status10El.textContent="All slots are filled."; shakeSlots(); return; }
-        if (state.hintsUsed>=state.hintsCap){ status10El.textContent="No hints remaining."; shakeSlots(); return; }
+        if (emptyIdx.length===0){ status10El.textContent="All slots are filled."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
+        if (state.hintsUsed>=state.hintsCap){ status10El.textContent="No hints remaining."; slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); return; }
         var idx=emptyIdx[Math.floor(Math.random()*emptyIdx.length)]; var letter=state.target[idx];
-        state.slots[idx]=letter; var input=slotsEl.children[idx].querySelector("input"); if(input) input.value=letter;
-        state.guessed.add(letter); state.found.add(letter); state.hintsUsed+=1;
-        recomputeUsedInSlotsCounts(); updateHintState(); checkSolved();
+        // Ensure the input is focused before setting value (iOS repaint quirk)
+        var input=slotsEl.children[idx].querySelector("input");
+        if (input){
+          input.focus();
+          input.value = letter;
+          // Trigger 'input' handling manually so state & UI sync
+          var ev = new Event('input', {bubbles:true});
+          input.dispatchEvent(ev);
+          sfx.hint();
+          state.hintsUsed+=1; updateHintState();
+          // Move focus to the next empty slot for convenience
+          setTimeout(function(){
+            for (var k=idx+1;k<state.slots.length;k++){
+              var nxt = slotsEl.children[k].querySelector("input");
+              if (nxt && !nxt.value){ nxt.focus(); break; }
+            }
+          }, 0);
+        }
       }
 
       function reveal(){
@@ -541,9 +622,10 @@
       submitSolveBtn.addEventListener("click", submitSolve);
       document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
       document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
+      hintBtn.addEventListener("click", hint);
 
-      // Init
-      applyDifficulty("normal"); startNewGame();
+      // Init: load words then start
+      loadWords().then(function(){ applyDifficulty("normal"); startNewGame(); });
     })();
   </script>
 </body>
