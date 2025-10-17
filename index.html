@@ -24,9 +24,12 @@
       --success-bg:#0f1d18; --success-ink:#8fffe0; --notice-bg:#0f1126; --notice-ink:#a6b6ff;
     }
     *{box-sizing:border-box}
-    body{ margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    body{
+      margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background: radial-gradient(900px 520px at 50% -6%, var(--tile-alt) 0%, var(--bg) 60%);
-      color:var(--ink); min-height:100vh; display:grid; place-items:start center; padding:20px; }
+      color:var(--ink); min-height:100vh; display:grid; place-items:start center; padding:20px;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
     .app{ width:100%; max-width:980px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow: var(--glow); position:relative; overflow:hidden; }
     header{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
     h1{ margin:0; font-size:24px; letter-spacing:.3px; display:flex; gap:10px; align-items:center; font-weight:800; text-shadow: var(--glow-soft); }
@@ -46,7 +49,12 @@
     .section-title{ margin:0 0 10px 0; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; }
     .row{ display:grid; grid-template-columns: 160px 1fr; gap:10px; align-items:center; margin-top:6px; }
     .row label{ color:var(--muted); font-size:14px; }
-    input[type="text"]{ width:100%; padding:12px 12px; background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:10px; outline:none; font-size:18px; letter-spacing:2px; text-transform:uppercase; transition: box-shadow .2s ease, transform .08s ease; box-shadow: var(--glow-soft); }
+    input[type="text"]{
+      width:100%; padding:12px 12px; background:var(--panel); color:var(--ink);
+      border:1px solid var(--border); border-radius:10px; outline:none; font-size:18px;
+      letter-spacing:2px; text-transform:uppercase; transition: box-shadow .2s ease, transform .08s ease; box-shadow: var(--glow-soft);
+      -webkit-text-fill-color: var(--ink);
+    }
     input[type="text"]:focus{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); border-color:var(--accent); transform: translateY(-1px); }
     .history{ display:grid; gap:8px; }
     .guess-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:var(--panel); border:1px solid var(--border); border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:2px; text-transform:uppercase; animation: pop .18s ease; box-shadow: var(--glow-soft); }
@@ -65,9 +73,18 @@
     .letters .tile.bump{ transform: scale(1.06); box-shadow: 0 0 14px rgba(14,165,233,.35); }
     .footer{ margin-top:12px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; color:var(--muted); font-size:13px; }
     .hidden{ display:none !important; } .success{ color:var(--good); } .warning{ color:var(--warning); } .rowtitle{ font-size:13px; color:var(--muted); margin-top:10px; }
+
+    /* ROUND 6 slots */
     .slots{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; margin-top:8px; }
-    .slot{ position:relative; height:68px; display:grid; place-items:center; border-radius:12px; background:var(--panel); border:1px dashed var(--border); box-shadow: var(--glow-soft); }
-    .slot input{ width:100%; height:100%; background:transparent; color:var(--ink); border:none; outline:none; text-align:center; font-size:28px; font-weight:900; text-transform:uppercase; letter-spacing:3px; line-height:68px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; caret-color: var(--accent); }
+    .slot{ position:relative; height:72px; display:grid; place-items:center; border-radius:12px; background:var(--panel); border:1px dashed var(--border); box-shadow: var(--glow-soft); }
+    .slot input{
+      width:100%; height:100%; background:transparent; color:var(--ink); border:none; outline:none; text-align:center;
+      font-size:32px; font-weight:900; text-transform:uppercase; letter-spacing:2px; line-height:72px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      caret-color: var(--accent);
+      -webkit-text-fill-color: var(--ink); /* iOS readability */
+      text-shadow: 0 0 1px rgba(0,0,0,.05);
+    }
     .slot .line{ position:absolute; bottom:8px; left:10%; right:10%; height:2px; background:var(--ink); opacity:.25; }
     .shake{ animation: shake .25s ease; }
     .overlay{ position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(900px 600px at 50% -10%, rgba(0,0,0,0.10), rgba(0,0,0,0.40)); pointer-events:none; opacity:0; transition: opacity .25s ease; }
@@ -78,12 +95,16 @@
     @keyframes pop{ from{ transform: scale(.96); opacity:0;} to{ transform: scale(1); opacity:1;} }
     @keyframes fall{ to{ transform: translateY(110vh) rotate(360deg);} }
     @keyframes shake{ 0%{ transform: translateX(0);} 25%{ transform: translateX(-3px);} 50%{ transform: translateX(3px);} 75%{ transform: translateX(-2px);} 100%{ transform: translateX(0);} }
+
+    /* Modal */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.45); padding:20px; z-index:20; }
     .modal.show{ display:flex; }
-    .modal-card{ width:min(760px, 95vw); background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:14px; padding:18px; box-shadow: var(--glow); }
+    .modal-card{ width:min(820px, 95vw); background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:14px; padding:18px; box-shadow: var(--glow); }
     .modal-card h3{ margin:0 0 10px 0; }
-    .modal-body{ min-height:180px; line-height:1.6; color:var(--muted); }
+    .modal-body{ min-height:220px; line-height:1.6; color:var(--muted); }
     .modal-footer{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+    .how-visual{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+    .how-visual svg{ filter: drop-shadow(var(--glow-soft)); }
   </style>
 </head>
 <body>
@@ -127,7 +148,7 @@
           <label for="guess3">3-letter guess</label>
           <div style="display:flex; gap:8px; width:100%;">
             <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off" autocapitalize="characters" spellcheck="false"/>
-            <button class="primary" id="submit3">Submit</button>
+            <button class="primary" id="submit3" type="button">Submit</button>
           </div>
         </div>
         <div class="status" id="status3">You have <b id="roundsLeft">5</b> probe rounds.</div>
@@ -138,9 +159,9 @@
         <h3 class="section-title">Round 6: 7-letter solve</h3>
         <div class="slots" id="slots"></div>
         <div style="display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap;">
-          <button id="hintBtn" title="Reveal a correct letter in a random empty position">Hint</button>
-          <button id="submitSolve" class="primary" title="Submit your 7-letter guess">Submit Guess</button>
-          <button id="reveal" class="ghost" title="Show the answer">Reveal</button>
+          <button id="hintBtn" title="Reveal a correct letter in a random empty position" type="button">Hint</button>
+          <button id="submitSolve" class="primary" title="Submit your 7-letter guess" type="button">Submit Guess</button>
+          <button id="reveal" class="ghost" title="Show the answer" type="button">Reveal</button>
           <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">∞</b>. Type letters into the slots—focus auto-advances.</div>
         </div>
         <div class="status" id="status10">You can type in the slots at any time.</div>
@@ -173,8 +194,8 @@
         <h2 id="overlayTitle">Nice! You solved it 🎉</h2>
         <p id="overlayMsg">That was clean.</p>
         <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
-          <button id="playAgain" class="primary">Play again</button>
-          <button id="closeOverlay">Close</button>
+          <button id="playAgain" class="primary" type="button">Play again</button>
+          <button id="closeOverlay" type="button">Close</button>
         </div>
       </div>
     </div>
@@ -184,9 +205,9 @@
         <h3 id="howtoTitle">How to play</h3>
         <div id="howtoBody" class="modal-body"></div>
         <div class="modal-footer">
-          <button id="howtoPrev" class="ghost">Back</button>
-          <button id="howtoNext" class="primary">Next</button>
-          <button id="howtoClose">Close</button>
+          <button id="howtoPrev" class="ghost" type="button">Back</button>
+          <button id="howtoNext" class="primary" type="button">Next</button>
+          <button id="howtoClose" type="button">Close</button>
         </div>
       </div>
     </div>
@@ -227,6 +248,8 @@
       soundToggle.addEventListener("change", function(e){ setSound(!!e.target.checked); });
       function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
       document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
+
+      // WebAudio helpers
       function chirp(startFreq,endFreq,dur,type,gain){
         if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
         var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
@@ -234,13 +257,34 @@
         g.gain.setValueAtTime(gain, ctx.currentTime); try{ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }catch(_){ g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime+dur/1000); }
         o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+dur/1000);
       }
+      function whiteNoise(dur, gain, lpFreq){
+        if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return;
+        var bufferSize = Math.floor(ctx.sampleRate * dur);
+        var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        var data = buffer.getChannelData(0);
+        for (var i=0;i<bufferSize;i++){ data[i] = Math.random()*2-1; }
+        var src = ctx.createBufferSource(); src.buffer = buffer;
+        var g = ctx.createGain(); g.gain.setValueAtTime(gain, ctx.currentTime);
+        var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 1200;
+        src.connect(f).connect(g).connect(ctx.destination);
+        src.start(); src.stop(ctx.currentTime + dur);
+      }
+
       var sfx = {
         probeGood: function(){ chirp(520,800,120,"triangle",0.035); },
         probeBad: function(){ chirp(240,160,140,"sine",0.035); },
         place: function(){ chirp(520,540,60,"square",0.02); },
         hint: function(){ chirp(640,900,160,"triangle",0.03); },
-        revealUp: function(){ chirp(360,540,120,"sine",0.025); setTimeout(function(){ chirp(540,760,120,"sine",0.025); },130); setTimeout(function(){ chirp(760,1020,150,"sine",0.025); },260); },
-        success: function(){ [660,830,990,1240].forEach(function(f,i){ setTimeout(function(){ chirp(f,f+40,120,"triangle",0.035); }, i*120); }); }
+        winCorkCheer: function(){
+          var ctx = getAudioCtx(); if (!ctx) return;
+          // Cork "pop": short burst (highpass noise + sine blip)
+          whiteNoise(0.1, 0.12, 4000);
+          chirp(180, 80, 90, "sine", 0.06);
+          // Cheer: longer lowpass noise fade out
+          setTimeout(function(){ whiteNoise(1.8, 0.04, 1800); }, 120);
+          // Rising sparkle
+          [660,840,1020,1240,1480].forEach(function(f,i){ setTimeout(function(){ chirp(f, f+60, 140, "triangle", 0.035); }, 120*i); });
+        }
       };
 
       // State
@@ -264,8 +308,6 @@
       var foundWrap = document.getElementById("foundWrap");
       var eliminatedWrap = document.getElementById("eliminatedWrap");
       var notGuessedWrap = document.getElementById("notGuessedWrap");
-      var modeSelect = document.getElementById("modeSelect");
-      var difficultySelect = document.getElementById("difficultySelect");
       var slotsEl = document.getElementById("slots");
       var hintBtn = document.getElementById("hintBtn");
       var hintsUsedEl = document.getElementById("hintsUsed");
@@ -275,10 +317,12 @@
       var overlayMsg = document.getElementById("overlayMsg");
       var closeOverlay = document.getElementById("closeOverlay");
       var playAgain = document.getElementById("playAgain");
-      var modeNotice = document.getElementById("modeNotice");
       var revealBtn = document.getElementById("reveal");
       var submitSolveBtn = document.getElementById("submitSolve");
       var howButton = document.getElementById("howTo");
+      var howModal=document.getElementById("howtoModal"), howBody=document.getElementById("howtoBody");
+      var howPrev=document.getElementById("howtoPrev"), howNext=document.getElementById("howtoNext"), howClose=document.getElementById("howtoClose");
+      var howPage=0;
 
       function applyDifficulty(d){
         state.difficulty = d;
@@ -342,7 +386,7 @@
       function handleProbe(){
         if (state.finished) return;
         var g=(guess3El.value||"").trim().toUpperCase();
-        if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); return; }
+        if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); guess3El.focus(); return; }
         var counts = letterCounts(state.target); var markers=[];
         for (var i=0;i<3;i++){ var ch=g[i]; state.guessed.add(ch);
           if (state.target.indexOf(ch)!==-1){ markers.push({in:true,count:counts[ch]||1}); state.found.add(ch); state.eliminated.delete(ch); sfx.probeGood(); }
@@ -350,7 +394,7 @@
         addHistoryRow(g,markers); renderFound(); renderEliminated(); renderNotGuessed();
         state.roundsUsed += 1; var left=state.maxProbeRounds - state.roundsUsed;
         roundsLeftEl.textContent = left; status3El.innerHTML = left>0? "You have <b>"+left+"</b> probe rounds left." : "Probe phase complete.";
-        guess3El.value="";
+        guess3El.value=""; guess3El.focus(); // keep cursor ready without re-tapping
       }
 
       function renderSlots(focusFirst){
@@ -364,7 +408,7 @@
           slot.addEventListener("click", function(){ input.focus(); });
           input.addEventListener("input", function(e){
             var v=(e.target.value||"").toUpperCase().replace(/[^A-Z]/g,"");
-            e.target.value=v; state.slots[idx]=v; sfx.place();
+            e.target.value=v; state.slots[idx]=v;
             recomputeUsedInSlotsCounts(); checkSolved();
             if (v && idx<TARGET_LEN-1){ var next=slotsEl.children[idx+1].querySelector("input"); if(next) next.focus(); }
           });
@@ -399,7 +443,7 @@
         if (state.hintsUsed>=state.hintsCap){ status10El.textContent="No hints remaining."; shakeSlots(); return; }
         var idx=emptyIdx[Math.floor(Math.random()*emptyIdx.length)]; var letter=state.target[idx];
         state.slots[idx]=letter; var input=slotsEl.children[idx].querySelector("input"); if(input) input.value=letter;
-        state.guessed.add(letter); state.found.add(letter); state.hintsUsed+=1; sfx.hint();
+        state.guessed.add(letter); state.found.add(letter); state.hintsUsed+=1;
         recomputeUsedInSlotsCounts(); updateHintState(); checkSolved();
       }
 
@@ -414,7 +458,7 @@
 
       function currentGuess(){ return state.slots.join(""); }
       function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); },260); }
-      function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.success(); launchConfetti(document.querySelector('.app')); }
+      function celebrate(){ overlayTitle.textContent="Nice! You solved it 🎉"; overlayMsg.textContent="That was clean."; overlay.classList.add('show'); sfx.winCorkCheer(); launchConfetti(document.querySelector('.app')); }
       function launchConfetti(root){
         var colors=["#22d3ee","#8b5cf6","#10b981","#f59e0b","#ef4444"];
         for (var i=0;i<90;i++){ var c=document.createElement('div'); c.className='confetti';
@@ -444,20 +488,56 @@
         shakeSlots();
       }
 
-      // Minimal "How to"
-      var howModal=document.getElementById("howtoModal"), howBody=document.getElementById("howtoBody"), howPage=0;
+      // How-to pages with illustration (and no Next on page 2)
       function renderHow(){
-        if (howPage===0){ howBody.innerHTML = "<b>Probe Rounds (1–5):</b><br/>Enter 3-letter words. Circle number = letter exists (repeats in Standard). X = not in word."; }
-        else { howBody.innerHTML = "<b>Round 6 (Solve):</b><br/>Type into the 7 slots. Submit checks the word (clears on miss). Hint places a correct letter. Reveal shows the answer without a win."; }
+        if (howPage===0){
+          howBody.innerHTML = `
+            <b>Probe Rounds (1–5):</b><br/>
+            Enter 3-letter words to scout the target. Each letter gets feedback:
+            <div class="how-visual">
+              <svg width="360" height="86" viewBox="0 0 360 86" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Probe example">
+                <rect x="10" y="12" rx="10" ry="10" width="340" height="62" fill="none" stroke="var(--border)"/>
+                <g transform="translate(36,26)">
+                  <circle cx="0" cy="16" r="12" fill="none" stroke="var(--good)" stroke-width="3"/>
+                  <text x="0" y="20" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">2</text>
+                  <text x="18" y="20" font-size="12" fill="var(--muted)">= letter appears twice</text>
+                </g>
+                <g transform="translate(200,26)">
+                  <rect x="-12" y="6" width="20" height="20" rx="3" fill="var(--bad)"/>
+                  <line x1="-9" y1="16" x2="5" y2="8" stroke="white" stroke-width="2"/>
+                  <line x1="-9" y1="16" x2="5" y2="24" stroke="white" stroke-width="2"/>
+                  <text x="16" y="20" font-size="12" fill="var(--muted)">= not in word</text>
+                </g>
+              </svg>
+            </div>
+          `;
+          howNext.style.display = "";
+        } else {
+          howBody.innerHTML = `
+            <b>Round 6 (Solve):</b><br/>
+            Type into the 7 slots. Focus auto-advances. Use <b>Hint</b> to place a correct letter. Submit checks the word and clears slots if wrong. Reveal shows the answer without a win.
+            <div class="how-visual">
+              <svg width="420" height="90" viewBox="0 0 420 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solve slots">
+                <g transform="translate(20,24)">
+                  ${Array.from({length:7}).map((_,i)=>`
+                    <rect x="${i*56}" y="0" width="48" height="48" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"></rect>
+                  `).join('')}
+                </g>
+              </svg>
+            </div>
+          `;
+          // Hide "Next" on the second page
+          howNext.style.display = "none";
+        }
       }
-      document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); howModal.classList.add("show"); });
-      document.getElementById("howtoClose").addEventListener("click", function(){ howModal.classList.remove("show"); });
-      document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
-      document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(1,howPage+1); renderHow(); });
+      howButton.addEventListener("click", function(){ howPage=0; renderHow(); howModal.classList.add("show"); });
+      howClose.addEventListener("click", function(){ howModal.classList.remove("show"); });
+      howPrev.addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
+      howNext.addEventListener("click", function(){ howPage=Math.min(1,howPage+1); renderHow(); });
 
       // Events
       document.getElementById("newGame").addEventListener("click", function(){ startNewGame(); });
-      document.getElementById("submit3").addEventListener("click", handleProbe);
+      document.getElementById("submit3").addEventListener("click", function(e){ e.preventDefault(); handleProbe(); });
       document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key==="Enter") handleProbe(); });
       revealBtn.addEventListener("click", reveal);
       submitSolveBtn.addEventListener("click", submitSolve);
@@ -466,7 +546,6 @@
 
       // Init
       applyDifficulty("normal"); startNewGame();
-      document.getElementById("modeNotice").classList.toggle("hidden", document.getElementById("modeSelect").value !== "insane");
     })();
   </script>
 </body>
