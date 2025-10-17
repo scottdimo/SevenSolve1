@@ -60,9 +60,11 @@
     }
     input[type="text"]:focus{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); border-color:var(--accent); transform: translateY(-1px); }
     .history{ display:grid; gap:8px; }
-    .guess-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:var(--tile); border:1px solid var(--border); border-radius:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:2px; text-transform:uppercase; animation: pop .18s ease; box-shadow: var(--glow-soft); }
-    .badge{ display:inline-flex; gap:8px; align-items:center; font-size:13px; color:var(--muted); flex-wrap:wrap; }
-    .pill{ padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:var(--tile-alt); letter-spacing:1px; display:inline-flex; gap:6px; align-items:center; position:relative; box-shadow: var(--glow-soft); }
+    .guess-item{ padding:10px 12px; background:var(--tile); border:1px solid var(--border); border-radius:10px; box-shadow: var(--glow-soft); }
+    .guess-row{ display:flex; gap:10px; align-items:flex-end; }
+    .ltrCol{ display:grid; grid-template-rows:auto 16px; gap:6px; align-items:end; justify-items:center; }
+    .ltr{ width:40px; height:44px; display:grid; place-items:center; border-radius:8px; background:var(--panel); border:1px solid var(--border); font-weight:900; letter-spacing:1px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .marker{ height:16px; display:grid; place-items:center; }
     .circ{ width:18px; height:18px; border-radius:999px; border:2px solid var(--good); display:inline-grid; place-items:center; font-size:11px; font-weight:800; color:var(--good); }
     .x{ width:18px; height:18px; border-radius:3px; background:var(--bad); display:inline-block; position:relative; }
     .x::before,.x::after{ content:""; position:absolute; left:50%; top:50%; width:12px; height:2px; background:#ffffff90; transform-origin:center; }
@@ -110,10 +112,31 @@
     .modal-body{ min-height:220px; line-height:1.6; color:var(--muted); }
     .modal-footer{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
     .how-visual{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:12px; }
-    .how-visual svg{ filter: drop-shadow(var(--glow-soft)); max-width:100%; height:auto; }
+    .how-visual .fake-shot{ width:100%; border:1px solid var(--border); border-radius:12px; background: var(--tile); padding:12px; box-shadow: var(--glow-soft); }
+    .how-visual .fake-title{ font-weight:800; color:var(--ink); margin-bottom:8px; }
+    .how-visual .fake-row{ display:flex; gap:8px; }
+    .how-visual .fake-slot{ flex:1; height:44px; background:var(--panel); border:1px solid var(--border); border-radius:8px; display:grid; place-items:center; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .brand-splash{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: radial-gradient(1200px 800px at 50% -12%, var(--tile-alt) 0%, var(--bg) 70%); z-index:50; }
+    .brand-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:26px; width:min(760px,92vw); text-align:center; box-shadow: var(--glow); }
+    .logo-hero{ font-weight:900; font-size:38px; letter-spacing:.02em; color:var(--ink); display:flex; gap:10px; align-items:flex-end; justify-content:center; }
+    .logo-hero .seven{ font-size:52px; line-height:1; color:var(--accent); transform: translateY(2px); text-shadow: var(--glow-soft); }
+    .tagline{ color:var(--muted); margin-top:8px; font-size:16px; }
+    .brand-actions{ margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   </style>
 </head>
 <body>
+  <!-- Splash (first view) -->
+  <div id="brandSplash" class="brand-splash">
+    <div class="brand-card">
+      <div class="logo-hero"><span class="seven">7</span> HEPTIX</div>
+      <div class="tagline">A word game for pattern thinkers.</div>
+      <div class="brand-actions">
+        <button id="splashHow" class="cta">How to play</button>
+        <button id="splashNew" class="primary">New Game</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app">
     <header>
       <h1>Heptix <span class="tag">beta</span></h1>
@@ -130,7 +153,7 @@
         <label class="group" title="Rounds & hint limit">
           Difficulty:
           <select id="difficultySelect">
-            <option value="normal" selected>Normal (5 probes, ∞ hints)</option>
+            <option value="normal" selected>Normal (5 probes, 3 hints)</option>
             <option value="hard">Hard (4 probes, 1 hint)</option>
           </select>
         </label>
@@ -168,7 +191,7 @@
           <button id="hintBtn" title="Reveal a correct letter in a random empty position" type="button">Hint</button>
           <button id="submitSolve" class="primary" title="Submit your 7-letter guess" type="button">Submit Guess</button>
           <button id="reveal" class="ghost" title="Show the answer" type="button">Reveal</button>
-          <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">∞</b>. Type letters into the slots—focus auto-advances.</div>
+          <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">3</b>. Type letters into the slots—focus auto-advances.</div>
         </div>
         <div class="status" id="status10">You can type in the slots at any time.</div>
 
@@ -184,10 +207,6 @@
 
       <section class="panel">
         <h3 class="section-title">How scoring works</h3>
-        <div class="hints">
-          <span class="pill"><span class="circ"><span id="circExample">2</span></span> Exists in word</span>
-          <span class="pill"><span class="x"></span> Not in word</span>
-        </div>
         <div class="footer">
           <div>Target words are 7 letters. Standard shows repeated letters; Insane hides counts.</div>
           <div><span id="debug" class="hidden"></span></div>
@@ -310,7 +329,6 @@
       function primeAudio(){ getAudioCtx(); document.removeEventListener("click", primeAudio); document.removeEventListener("touchstart", primeAudio); }
       document.addEventListener("click", primeAudio); document.addEventListener("touchstart", primeAudio);
 
-      // WebAudio helpers
       function chirp(startFreq,endFreq,dur,type,gain){
         if (!soundOn) return; var ctx = getAudioCtx(); if(!ctx) return; dur = dur||140; type=type||"sine"; gain=gain||0.03;
         var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type;
@@ -335,18 +353,13 @@
         probeBad: function(){ chirp(240,160,140,"sine",0.035); },
         place: function(){ chirp(520,540,60,"square",0.02); },
         hint: function(){ chirp(740,1000,160,"triangle",0.03); },
-        // Updated: cheer only (no cork pop)
-        winCheer: function(){
-          // crowd swell via filtered white noise + rising arpeggio
-          whiteNoise(1.6, 0.05, 2200);
-          [660, 880, 990, 1180, 1320].forEach(function(f,i){
-            setTimeout(function(){ chirp(f, f+80, 150, "triangle", 0.035); }, 110*i);
-          });
+        winCheer: function(){ whiteNoise(1.6, 0.05, 2200);
+          [660, 880, 990, 1180, 1320].forEach(function(f,i){ setTimeout(function(){ chirp(f, f+80, 150, "triangle", 0.035); }, 110*i); });
         }
       };
 
       // ===== Game state =====
-      var state = { target:"", found:new Set(), eliminated:new Set(), guessed:new Set(), roundsUsed:0, maxProbeRounds:5, finished:false, mode:"standard", difficulty:"normal", usedInSlotsCounts:{}, slots:Array(TARGET_LEN).fill(""), hintsUsed:0, hintsCap:Infinity };
+      var state = { target:"", found:new Set(), eliminated:new Set(), guessed:new Set(), roundsUsed:0, maxProbeRounds:5, finished:false, mode:"standard", difficulty:"normal", usedInSlotsCounts:{}, slots:Array(TARGET_LEN).fill(""), hintsUsed:0, hintsCap:3 };
 
       // Helpers
       function letterCounts(word){ var m={}; for (var i=0;i<word.length;i++){ var ch=word[i]; m[ch]=(m[ch]||0)+1; } return m; }
@@ -383,9 +396,9 @@
 
       function applyDifficulty(d){
         state.difficulty = d;
-        var cfg = { normal:{probes:5,hintCap:Infinity}, hard:{probes:4,hintCap:1} }[d];
+        var cfg = { normal:{probes:5,hintCap:3}, hard:{probes:4,hintCap:1} }[d];
         state.maxProbeRounds = cfg.probes; state.hintsCap = cfg.hintCap;
-        hintsCapEl.textContent = (state.hintsCap === Infinity ? "∞" : state.hintsCap);
+        hintsCapEl.textContent = state.hintsCap;
         roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
         status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
       }
@@ -395,8 +408,7 @@
         state.roundsUsed = 0; state.finished=false;
         state.found.clear(); state.eliminated.clear(); state.guessed.clear();
         state.usedInSlotsCounts = {}; state.slots = Array(TARGET_LEN).fill("");
-        state.hintsUsed = 0; hintsUsedEl.textContent = "0";
-        hintsCapEl.textContent = (state.hintsCap === Infinity ? "∞" : state.hintsCap);
+        state.hintsUsed = 0; hintsUsedEl.textContent = "0"; hintsCapEl.textContent = state.hintsCap;
         historyEl.innerHTML=""; roundsLeftEl.textContent = state.maxProbeRounds - state.roundsUsed;
         status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
         status10El.textContent = "You can type in the slots at any time.";
@@ -430,12 +442,24 @@
         notGuessedLettersEl.innerHTML = html; notGuessedWrap.classList.toggle("hidden", remaining.length===26);
       }
 
+      // New: clearer per-letter feedback row
       function addHistoryRow(guess, markers){
         var row = document.createElement("div"); row.className = "guess-item";
-        var left = document.createElement("div"); left.textContent = guess.toUpperCase();
-        var right = document.createElement("div"); right.className = "badge";
-        markers.forEach(function(m){ var span=document.createElement("span"); span.className="pill"; span.innerHTML = m.in ? ("<span class='circ'>"+m.count+"</span> in word") : "<span class='x'></span> not in"; right.appendChild(span); });
-        row.appendChild(left); row.appendChild(right); historyEl.prepend(row);
+        var inner = document.createElement("div"); inner.className = "guess-row";
+        for (var i=0;i<guess.length;i++){
+          var col = document.createElement("div"); col.className="ltrCol";
+          var tile = document.createElement("div"); tile.className="ltr"; tile.textContent = guess[i];
+          var mk = document.createElement("div"); mk.className="marker";
+          var m = markers[i];
+          if (m.in){
+            var circ = document.createElement("div"); circ.className="circ"; circ.textContent = m.count;
+            mk.appendChild(circ);
+          }else{
+            var x = document.createElement("div"); x.className="x"; mk.appendChild(x);
+          }
+          col.appendChild(tile); col.appendChild(mk); inner.appendChild(col);
+        }
+        row.appendChild(inner); historyEl.prepend(row);
       }
 
       function validateProbeWord(g){ return g.length===3 && isAlpha(g); }
@@ -492,7 +516,7 @@
         renderFound(); renderEliminated(); renderNotGuessed();
       }
 
-      function updateHintState(){ hintsUsedEl.textContent=String(state.hintsUsed); hintsCapEl.textContent=(state.hintsCap===Infinity?"∞":state.hintsCap); }
+      function updateHintState(){ hintsUsedEl.textContent=String(state.hintsUsed); hintsCapEl.textContent=String(state.hintsCap); }
 
       function hint(){
         var emptyIdx=[]; for (var i=0;i<TARGET_LEN;i++){ if(!state.slots[i]) emptyIdx.push(i); }
@@ -557,42 +581,63 @@
         shakeSlots();
       }
 
-      // How-to pages (updated colors retained)
+      // How-to pages
       function renderHow(){
         if (howPage===0){
+          // Page 1: Probe basics + tip about not repeating letters
           howBody.innerHTML = `
             <b>Probe Rounds (1–5):</b><br/>
-            Enter 3-letter words to scout the target. Each letter gets feedback:
+            Enter 3-letter words to scout the target. Each letter shows if it exists in the word.
             <div class="how-visual">
-              <svg width="360" height="86" viewBox="0 0 360 86" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Probe example">
-                <rect x="10" y="12" rx="10" ry="10" width="340" height="62" fill="none" stroke="var(--border)"/>
-                <g transform="translate(36,26)">
-                  <circle cx="0" cy="16" r="12" fill="none" stroke="var(--good)" stroke-width="3"/>
-                  <text x="0" y="20" text-anchor="middle" font-size="12" font-weight="800" fill="var(--good)">2</text>
-                  <text x="18" y="20" font-size="12" fill="var(--muted)">= letter appears twice</text>
-                </g>
-                <g transform="translate(200,26)">
-                  <rect x="-12" y="6" width="20" height="20" rx="3" fill="var(--bad)"/>
-                  <line x1="-9" y1="16" x2="5" y2="8" stroke="white" stroke-width="2"/>
-                  <line x1="-9" y1="16" x2="5" y2="24" stroke="white" stroke-width="2"/>
-                  <text x="16" y="20" font-size="12" fill="var(--muted)">= not in word</text>
-                </g>
-              </svg>
+              <div class="fake-shot">
+                <div class="fake-title">Example probe</div>
+                <div class="fake-row">
+                  <div class="fake-slot">C</div>
+                  <div class="fake-slot">A</div>
+                  <div class="fake-slot">T</div>
+                </div>
+                <div style="margin-top:8px;display:flex;gap:12px;align-items:center;">
+                  <span class="circ">1</span> <span class="muted">= letter is in target (count shown in Standard)</span>
+                  <span class="x"></span> <span class="muted">= letter not in target</span>
+                </div>
+              </div>
             </div>
+            <div style="margin-top:10px; color:var(--muted);"><b>Tip:</b> It's best <b>not to repeat the same letter</b> during probe rounds — you’ll get more coverage.</div>
           `;
           howNext.style.display = "";
-        } else {
+        } else if (howPage===1){
+          // Page 2: Solve
           howBody.innerHTML = `
             <b>Round 6 (Solve):</b><br/>
             Type into the 7 lines. Focus auto-advances. Use <b>Hint</b> to place a correct letter. Submit checks the word and clears slots if wrong. Reveal shows the answer without a win.
             <div class="how-visual">
-              <svg width="420" height="90" viewBox="0 0 420 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solve lines">
-                <g transform="translate(20,40)">
-                  ${Array.from({length:7}).map((_,i)=>`
-                    <line x1="${i*56}" y1="0" x2="${i*56+48}" y2="0" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"></line>
-                  `).join('')}
-                </g>
-              </svg>
+              <div class="fake-shot">
+                <div class="fake-title">Solve layout</div>
+                <div class="fake-row" style="gap:10px;">
+                  ${Array.from({length:7}).map(()=>'<div class="fake-slot" style="height:30px;">&nbsp;</div>').join('')}
+                </div>
+              </div>
+            </div>
+          `;
+          howNext.style.display = "";
+        } else {
+          // Page 3: Modes & difficulty
+          howBody.innerHTML = `
+            <b>Modes & Difficulty:</b><br/>
+            <ul>
+              <li><b>Standard mode</b>: shows repeated-letter counts during probes.</li>
+              <li><b>Insane mode</b>: hides repeated-letter counts during probes.</li>
+              <li><b>Normal difficulty</b>: 5 probe rounds, <b>3 hints</b>.</li>
+              <li><b>Hard difficulty</b>: 4 probe rounds, <b>1 hint</b>.</li>
+            </ul>
+            <div class="how-visual">
+              <div class="fake-shot">
+                <div class="fake-title">Mode & difficulty controls</div>
+                <div class="fake-row">
+                  <div class="fake-slot" style="width:160px">Mode: Standard ▾</div>
+                  <div class="fake-slot" style="width:200px">Difficulty: Normal ▾</div>
+                </div>
+              </div>
             </div>
           `;
           howNext.style.display = "none";
@@ -601,20 +646,39 @@
       document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); document.getElementById("howtoModal").classList.add("show"); });
       document.getElementById("howtoClose").addEventListener("click", function(){ document.getElementById("howtoModal").classList.remove("show"); });
       document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
-      document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(1,howPage+1); renderHow(); });
+      document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(2,howPage+1); renderHow(); });
 
       // Events
       document.getElementById("newGame").addEventListener("click", function(){ startNewGame(); });
       document.getElementById("submit3").addEventListener("click", function(e){ e.preventDefault(); handleProbe(); });
       document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key==="Enter") handleProbe(); });
-      revealBtn.addEventListener("click", reveal);
-      submitSolveBtn.addEventListener("click", submitSolve);
+      document.getElementById("reveal").addEventListener("click", reveal);
+      document.getElementById("submitSolve").addEventListener("click", submitSolve);
       document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
       document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
-      hintBtn.addEventListener("click", hint);
+      document.getElementById("hintBtn").addEventListener("click", hint);
+
+      // Splash actions
+      var splash = document.getElementById("brandSplash");
+      document.getElementById("splashNew").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); splash.style.display="none"; startNewGame(); });
+      document.getElementById("splashHow").addEventListener("click", function(){ sessionStorage.setItem("heptix_splash_seen","1"); splash.style.display="none"; howPage=0; renderHow(); document.getElementById("howtoModal").classList.add("show"); });
+
+      // Mode selector & notice
+      var modeSelect = document.getElementById("modeSelect");
+      var modeNotice = document.getElementById("modeNotice");
+      modeSelect.addEventListener("change", function(){
+        state.mode = modeSelect.value;
+        modeNotice.classList.toggle("hidden", state.mode!=="insane");
+      });
+
+      // Difficulty selector
+      var difficultySelect = document.getElementById("difficultySelect");
+      difficultySelect.addEventListener("change", function(){
+        applyDifficulty(difficultySelect.value);
+      });
 
       // Init
-      loadWords().then(function(){ applyDifficulty("normal"); startNewGame(); });
+      loadWords().then(function(){ applyDifficulty("normal"); if (sessionStorage.getItem("heptix_splash_seen")==="1"){ document.getElementById("brandSplash").style.display="none"; startNewGame(); } });
     })();
   </script>
 </body>
