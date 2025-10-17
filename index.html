@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover"/>
   <title>SevenSolve</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -74,18 +74,22 @@
     .footer{ margin-top:12px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; color:var(--muted); font-size:13px; }
     .hidden{ display:none !important; } .success{ color:var(--good); } .warning{ color:var(--warning); } .rowtitle{ font-size:13px; color:var(--muted); margin-top:10px; }
 
-    /* ROUND 6 slots */
-    .slots{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; margin-top:8px; }
-    .slot{ position:relative; height:72px; display:grid; place-items:center; border-radius:12px; background:var(--panel); border:1px dashed var(--border); box-shadow: var(--glow-soft); }
+    /* ROUND 6 underline slots (no fixed height boxes) */
+    .slots{ display:grid; grid-template-columns: repeat(7, 1fr); gap:10px; margin-top:10px; }
+    .slot{ position:relative; padding:6px 0 0; background:transparent; border:none; }
     .slot input{
-      width:100%; height:100%; background:transparent; color:var(--ink); border:none; outline:none; text-align:center;
-      font-size:32px; font-weight:900; text-transform:uppercase; letter-spacing:2px; line-height:72px;
+      width:100%; background:transparent; color:var(--ink); border:none; outline:none; text-align:center;
+      font-weight:900; text-transform:uppercase; letter-spacing:.04em;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       caret-color: var(--accent);
       -webkit-appearance:none; appearance:none;
       -webkit-text-fill-color: var(--ink);
+      /* Responsive font that fits on iPhone 15 Pro Max */
+      font-size: clamp(22px, 5.2vw, 34px);
+      line-height: 1.15;
+      padding: 2px 0 6px;
     }
-    .slot .line{ position:absolute; bottom:8px; left:10%; right:10%; height:2px; background:var(--ink); opacity:.25; }
+    .slot .line{ position:relative; height:2px; background:var(--ink); opacity:.3; border-radius:2px; }
     .shake{ animation: shake .25s ease; }
     .overlay{ position:absolute; inset:0; display:grid; place-items:center; background: radial-gradient(900px 600px at 50% -10%, rgba(0,0,0,0.10), rgba(0,0,0,0.40)); pointer-events:none; opacity:0; transition: opacity .25s ease; }
     .overlay.show{ opacity:1; pointer-events:auto; }
@@ -104,7 +108,7 @@
     .modal-body{ min-height:220px; line-height:1.6; color:var(--muted); }
     .modal-footer{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
     .how-visual{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:12px; }
-    .how-visual svg{ filter: drop-shadow(var(--glow-soft)); }
+    .how-visual svg{ filter: drop-shadow(var(--glow-soft)); max-width:100%; height:auto; }
   </style>
 </head>
 <body>
@@ -265,7 +269,7 @@
         for (var i=0;i<bufferSize;i++){ data[i] = Math.random()*2-1; }
         var src = ctx.createBufferSource(); src.buffer = buffer;
         var g = ctx.createGain(); g.gain.setValueAtTime(gain, ctx.currentTime);
-        var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 1200;
+        var f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value = lpFreq || 1800;
         src.connect(f).connect(g).connect(ctx.destination);
         src.start(); src.stop(ctx.currentTime + dur);
       }
@@ -318,9 +322,6 @@
       var howModal=document.getElementById("howtoModal"), howBody=document.getElementById("howtoBody");
       var howPrev=document.getElementById("howtoPrev"), howNext=document.getElementById("howtoNext"), howClose=document.getElementById("howtoClose");
       var howPage=0;
-
-      // iOS detection for font scaling tweak
-      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
       function applyDifficulty(d){
         state.difficulty = d;
@@ -418,7 +419,6 @@
           slot.appendChild(input); var line=document.createElement("div"); line.className="line"; slot.appendChild(line); slotsEl.appendChild(slot);
         })(i); }
         if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.focus(); }
-        adjustSlotFont(); // ensure fit on initial render
       }
 
       function clearSlots(){
@@ -427,24 +427,6 @@
           var input = slotsEl.children[i].querySelector("input"); if (input){ input.value=""; }
         }
         recomputeUsedInSlotsCounts();
-        adjustSlotFont();
-      }
-
-      function adjustSlotFont(){
-        // Compute font-size based on slot height; use slightly smaller scale on iOS.
-        var slots = slotsEl.querySelectorAll('.slot');
-        if (!slots.length) return;
-        var scale = isIOS ? 0.58 : 0.64;
-        slots.forEach(function(slot){
-          var h = slot.clientHeight || 60;
-          var fs = Math.min(Math.max(Math.floor(h * scale), 18), 36); // 18–36px
-          var input = slot.querySelector('input');
-          if (input){
-            input.style.fontSize = fs + 'px';
-            input.style.lineHeight = h + 'px';
-            input.style.letterSpacing = Math.max(1, Math.floor(h * 0.03)) + 'px';
-          }
-        });
       }
 
       function recomputeUsedInSlotsCounts(){
@@ -462,7 +444,6 @@
         state.slots[idx]=letter; var input=slotsEl.children[idx].querySelector("input"); if(input) input.value=letter;
         state.guessed.add(letter); state.found.add(letter); state.hintsUsed+=1;
         recomputeUsedInSlotsCounts(); updateHintState(); checkSolved();
-        adjustSlotFont();
       }
 
       function reveal(){
@@ -472,7 +453,6 @@
         overlayTitle.textContent = "Better luck next time";
         overlayMsg.innerHTML = "The target was <b>"+state.target+"</b>.";
         overlay.classList.add('show');
-        adjustSlotFont();
       }
 
       function currentGuess(){ return state.slots.join(""); }
@@ -534,12 +514,12 @@
         } else {
           howBody.innerHTML = `
             <b>Round 6 (Solve):</b><br/>
-            Type into the 7 slots. Focus auto-advances. Use <b>Hint</b> to place a correct letter. Submit checks the word and clears slots if wrong. Reveal shows the answer without a win.
+            Type into the 7 lines. Focus auto-advances. Use <b>Hint</b> to place a correct letter. Submit checks the word and clears slots if wrong. Reveal shows the answer without a win.
             <div class="how-visual">
-              <svg width="420" height="90" viewBox="0 0 420 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solve slots">
-                <g transform="translate(20,24)">
+              <svg width="420" height="90" viewBox="0 0 420 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Solve lines">
+                <g transform="translate(20,40)">
                   ${Array.from({length:7}).map((_,i)=>`
-                    <rect x="${i*56}" y="0" width="48" height="48" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"></rect>
+                    <line x1="${i*56}" y1="0" x2="${i*56+48}" y2="0" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"></line>
                   `).join('')}
                 </g>
               </svg>
@@ -548,9 +528,10 @@
           howNext.style.display = "none";
         }
       }
-      howButton.addEventListener("click", function(){ howPage=0; renderHow(); howModal.classList.add("show"); });
-      howClose.addEventListener("click", function(){ howModal.classList.remove("show"); });
-      howPrev.addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
+      document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); document.getElementById("howtoModal").classList.add("show"); });
+      document.getElementById("howtoClose").addEventListener("click", function(){ document.getElementById("howtoModal").classList.remove("show"); });
+      document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
+      document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(1,howPage+1); renderHow(); });
 
       // Events
       document.getElementById("newGame").addEventListener("click", function(){ startNewGame(); });
@@ -561,14 +542,8 @@
       document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
       document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
 
-      // Resize handlers for iOS scaling
-      window.addEventListener('resize', adjustSlotFont);
-      window.addEventListener('orientationchange', function(){ setTimeout(adjustSlotFont, 200); });
-
       // Init
       applyDifficulty("normal"); startNewGame();
-      // Also adjust after first render
-      setTimeout(adjustSlotFont, 0);
     })();
   </script>
 </body>
