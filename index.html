@@ -3,51 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SevenSolve — a 7-letter Word Deduction</title>
+  <title>SevenSolve</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <style>
     :root {
-      --bg: #ffffff;
-      --ink: #0b1220;
-      --muted: #5b6375;
-      --panel: #f4f6fb;
-      --border: rgba(11,18,32,0.12);
-      --accent: #3a57ff;
-      --good: #22c55e;
-      --bad: #6b7280;
-      --warning: #f59e0b;
-      --ring: rgba(58,87,255,0.2);
-      --tile: #eef2ff;
-      --tile-alt: #e9eef9;
-      --success-bg: #e8f9f0;
-      --success-ink: #065f46;
-      --notice-bg: #eef2ff;
-      --notice-ink: #2433a0;
-    }
-    [data-theme="dark"] {
-      --bg: #0f1220;
-      --ink: #e9ecff;
-      --muted: #94a3b8;
-      --panel: #14182a;
-      --border: rgba(255,255,255,0.12);
-      --accent: #7c9cff;
-      --good: #4ade80;
-      --bad: #64748b;
-      --warning: #fbbf24;
-      --ring: rgba(124,156,255,0.35);
-      --tile: #0d1122;
-      --tile-alt: #0f1328;
-      --success-bg: #0d1f1a;
-      --success-ink: #6ee7b7;
-      --notice-bg: #0d132d;
-      --notice-ink: #a9b7ff;
+      --bg: #0a0d12;
+      --ink: #e8f2ff;
+      --muted: #9bb3d1;
+      --panel: #0e1420;
+      --border: rgba(148, 163, 184, 0.18);
+      --accent: #5ef0ff;
+      --accent2: #b36bff;
+      --good: #46ffb6;
+      --bad: #6b7a90;
+      --warning: #ffd166;
+      --tile: #0a0f1d;
+      --tile-alt: #0b1022;
+      --ring: rgba(94, 240, 255, 0.35);
+      --glow: 0 0 10px rgba(94,240,255,0.45), 0 0 30px rgba(179,107,255,0.25);
+      --glow-soft: 0 0 12px rgba(94,240,255,0.25);
+      --success-bg: #0f1d18;
+      --success-ink: #8fffe0;
+      --notice-bg: #0f1126;
+      --notice-ink: #a6b6ff;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
-      background: var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+      background: radial-gradient(1000px 600px at 50% -10%, #0f1a2b 0%, #070a11 60%, #05070c 100%);
       color: var(--ink);
       min-height: 100vh;
       display: grid;
@@ -57,11 +42,12 @@
     .app {
       width: 100%;
       max-width: 980px;
-      background: var(--panel);
+      background: linear-gradient(180deg, rgba(19,26,42,0.7), rgba(10,13,18,0.7));
+      backdrop-filter: blur(6px);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      box-shadow: var(--glow);
       position: relative;
       overflow: hidden;
     }
@@ -76,11 +62,12 @@
     h1 {
       margin: 0;
       font-size: 22px;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.4px;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
-      font-weight: 700;
+      font-weight: 800;
+      text-shadow: var(--glow-soft);
     }
     .tag {
       font-size: 12px;
@@ -90,12 +77,13 @@
       border-radius: 999px;
     }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .toggle, .group {
+    .toggle, .group, .ghost {
       display: inline-flex; gap: 8px; align-items: center;
       background: var(--tile); border: 1px solid var(--border);
       padding: 8px 10px; border-radius: 10px; font-size: 13px; color: var(--muted);
-      user-select: none;
+      user-select: none; box-shadow: var(--glow-soft);
     }
+    .ghost { background: transparent; }
     .notice {
       width: 100%;
       background: var(--notice-bg);
@@ -105,58 +93,69 @@
       padding: 10px 12px;
       font-size: 13px;
       margin-bottom: 10px;
+      box-shadow: var(--glow-soft);
     }
     button {
-      background: var(--tile);
+      background: linear-gradient(180deg, rgba(15,28,45,0.9), rgba(9,15,26,0.9));
       color: var(--ink);
       border: 1px solid var(--border);
       padding: 10px 12px;
       border-radius: 10px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.2px;
       transition: 0.15s ease;
+      box-shadow: var(--glow-soft);
     }
-    button:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring) inset; }
-    button.primary { background: linear-gradient(180deg, #4f63ff, #546dff); color: #fff; border-color: transparent; }
-    button.primary:hover { filter: brightness(1.05); }
+    button:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); }
+    button.primary {
+      background: linear-gradient(180deg, #5ef0ff, #5ed2ff);
+      color: #051520;
+      border-color: transparent;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+    }
+    button.purple {
+      background: linear-gradient(180deg, #b36bff, #8b4dff);
+      color: #fff;
+      border-color: transparent;
+    }
     .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 8px; }
-    .panel { background: var(--tile-alt); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .panel { background: var(--tile-alt); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: var(--glow-soft); }
     .section-title { margin: 0 0 10px 0; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
     .row { display: grid; grid-template-columns: 160px 1fr; gap: 10px; align-items: center; margin-top: 6px; }
     .row label { color: var(--muted); font-size: 14px; }
     input[type="text"] {
-      width: 100%; padding: 12px 12px; background: var(--bg); color: var(--ink);
+      width: 100%; padding: 12px 12px; background: rgba(7,12,23,0.9); color: var(--ink);
       border: 1px solid var(--border); border-radius: 10px; outline: none; font-size: 16px;
       letter-spacing: 2px; text-transform: uppercase;
       transition: box-shadow .2s ease, transform .08s ease;
+      box-shadow: var(--glow-soft);
     }
-    input[type="text"]:focus { box-shadow: 0 0 0 3px var(--ring); border-color: var(--accent); transform: translateY(-1px); }
+    input[type="text"]:focus { box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); border-color: var(--accent); transform: translateY(-1px); }
     .history { display: grid; gap: 8px; }
-    .guess-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; letter-spacing: 2px; text-transform: uppercase; animation: pop .18s ease; }
+    .guess-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: rgba(6,10,18,0.9); border: 1px solid var(--border); border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; letter-spacing: 2px; text-transform: uppercase; animation: pop .18s ease; box-shadow: var(--glow-soft); }
     .badge { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
-    .pill { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); letter-spacing: 1px; display: inline-flex; gap: 6px; align-items: center; position: relative; }
+    .pill { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); background: rgba(10,16,28,0.9); letter-spacing: 1px; display: inline-flex; gap: 6px; align-items: center; position: relative; box-shadow: var(--glow-soft); }
     .circ { width: 18px; height: 18px; border-radius: 999px; border: 2px solid var(--good); display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; }
     .x { width: 18px; height: 18px; border-radius: 3px; background: var(--bad); display: inline-block; position: relative; }
-    .x::before, .x::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; background: var(--bg); transform-origin: center; }
+    .x::before, .x::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; background: #0b1220; transform-origin: center; }
     .x::before { transform: translate(-50%, -50%) rotate(45deg); }
     .x::after  { transform: translate(-50%, -50%) rotate(-45deg); }
     .status { margin-top: 6px; color: var(--muted); min-height: 20px; }
     .letters { display: flex; gap: 6px; flex-wrap: wrap; }
-    .letters .tile { position: relative; width: 36px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-weight: 800; letter-spacing: 1px; transition: transform .08s ease; }
+    .letters .tile { position: relative; width: 36px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: rgba(5,9,17,0.9); border: 1px solid var(--border); font-weight: 800; letter-spacing: 1px; transition: transform .08s ease, box-shadow .2s ease; box-shadow: var(--glow-soft); }
     .letters .tile.dim { opacity: 0.4; }
-    .letters .tile.bad { border-color: rgba(255,0,0,0.35); box-shadow: inset 0 0 0 2px rgba(255,0,0,0.12); }
+    .letters .tile.bad { border-color: rgba(255,0,0,0.25); box-shadow: inset 0 0 0 2px rgba(255,0,0,0.12), var(--glow-soft); }
     .letters .tile.slash::after { content: ""; position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: currentColor; transform: rotate(-24deg); }
-    .letters .tile.bump { transform: scale(1.06); }
+    .letters .tile.bump { transform: scale(1.06); box-shadow: 0 0 14px rgba(94,240,255,0.35); }
     .footer { margin-top: 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
     .hidden { display: none !important; }
     .success { color: var(--good); }
     .warning { color: var(--warning); }
     .rowtitle { font-size: 13px; color: var(--muted); margin-top: 10px; }
     .slots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px; }
-    .slot { position: relative; height: 54px; display: grid; place-items: center; border-radius: 10px; background: var(--bg); border: 1px dashed var(--border); }
-    .slot input { width: 100%; height: 100%; background: transparent; color: var(--ink); border: none; outline: none; text-align: center; font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
-    .slot input:disabled { opacity: 0.5; }
+    .slot { position: relative; height: 64px; display: grid; place-items: center; border-radius: 10px; background: rgba(7,12,23,0.9); border: 1px dashed var(--border); box-shadow: var(--glow-soft); }
+    .slot input { width: 100%; height: 100%; background: transparent; color: var(--ink); border: none; outline: none; text-align: center; font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
     .slot .line { position: absolute; bottom: 8px; left: 10%; right: 10%; height: 2px; background: var(--ink); opacity: 0.3; }
     .shake { animation: shake .25s ease; }
     .overlay {
@@ -177,6 +176,14 @@
     @keyframes pop { from{ transform: scale(.96); opacity:.0; } to{ transform: scale(1); opacity:1; } }
     @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
     @keyframes shake { 0%{ transform: translateX(0);} 25%{ transform: translateX(-3px);} 50%{ transform: translateX(3px);} 75%{ transform: translateX(-2px);} 100%{ transform: translateX(0);} }
+
+    /* Modal */
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); padding: 20px; z-index: 20; }
+    .modal.show { display: flex; }
+    .modal-card { width: min(720px, 95vw); background: #0b1020; color: var(--ink); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: var(--glow); }
+    .modal-card h3 { margin: 0 0 10px 0; }
+    .modal-body { min-height: 160px; line-height: 1.6; color: var(--muted); }
+    .modal-footer { display:flex; gap:8px; justify-content: flex-end; margin-top: 12px; }
   </style>
 </head>
 <body>
@@ -184,12 +191,8 @@
     <header>
       <h1>SevenSolve <span class="tag">prototype</span></h1>
       <div class="controls">
-        <button id="newGame">New Game</button>
-        <button id="reveal">Reveal</button>
-        <label class="toggle" title="Switch light/dark">
-          <input type="checkbox" id="themeToggle"/>
-          Dark mode
-        </label>
+        <button id="howTo" class="ghost">How to play</button>
+        <button id="newGame" class="purple">New Game</button>
         <label class="group" title="Feedback style">
           Mode:
           <select id="modeSelect">
@@ -204,9 +207,9 @@
             <option value="hard">Hard (4 probes, 1 hint)</option>
           </select>
         </label>
-        <label class="toggle" title="Rejects non-words for 3-letter probes">
-          <input type="checkbox" id="validateToggle" checked />
-          Validate probes
+        <label class="toggle" title="Dark theme">
+          <input type="checkbox" id="themeToggle"/>
+          Dark mode
         </label>
         <label class="toggle" title="Mute/unmute sounds (M)">
           <input type="checkbox" id="soundToggle" checked />
@@ -232,11 +235,12 @@
       </section>
 
       <section class="panel">
-        <h3 class="section-title">Round 6: 7-letter hangman-style solve</h3>
+        <h3 class="section-title">Round 6: 7-letter solve</h3>
         <div class="slots" id="slots"></div>
-        <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap;">
           <button id="hintBtn" title="Reveal a correct letter in a random empty position">Hint</button>
-          <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">∞</b>. Type letters into the slots or use Hint to reveal a letter in-place.</div>
+          <button id="reveal" class="ghost" title="Fill the answer">Reveal</button>
+          <div class="hint-note">Hints used: <b id="hintsUsed">0</b> / <b id="hintsCap">∞</b>. Type letters into the slots—focus auto-advances.</div>
         </div>
         <div class="status" id="status10">You can type in the slots at any time.</div>
 
@@ -253,7 +257,7 @@
       <section class="panel">
         <h3 class="section-title">How scoring works</h3>
         <div class="hints">
-          <span class="pill"><span class="circ" title="Letter exists; number shows total appearances in Standard mode"><span id="circExample">2</span></span> Exists in word</span>
+          <span class="pill"><span class="circ"><span id="circExample">2</span></span> Exists in word</span>
           <span class="pill"><span class="x"></span> Not in word</span>
         </div>
         <div class="footer">
@@ -263,6 +267,7 @@
       </section>
     </div>
 
+    <!-- Success overlay -->
     <div id="overlay" class="overlay">
       <div class="toast">
         <h2>Nice! You solved it 🎉</h2>
@@ -274,41 +279,34 @@
       </div>
     </div>
 
+    <!-- How to Play Modal -->
+    <div id="howtoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="howtoTitle">
+      <div class="modal-card">
+        <h3 id="howtoTitle">How to play</h3>
+        <div id="howtoBody" class="modal-body"></div>
+        <div class="modal-footer">
+          <button id="howtoPrev" class="ghost">Back</button>
+          <button id="howtoNext" class="primary">Next</button>
+          <button id="howtoClose">Close</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
     (function(){
-      // ---------- EMBEDDED DATA (no fetch) ----------
-      var EMBED_WORDS = [
+      // DATA
+      var WORDS = [
         "ANALOGY","APRICOT","ARCHIVE","BALANCE","CAPTURE","CRYSTAL","DIAGRAM","EMERALD",
         "GLACIER","GRANITE","HARVEST","HORIZON","INSIGHT","JOURNEY","KINGDOM","LECTURE",
         "LIBRARY","MYSTERY","ORCHARD","OUTCOME","PAINTER","PRAIRIE","RAINBOW","RESOLVE",
         "REVOLVE","SCHOLAR","SECURED","SEQUOIA","SERPENT","SINCERE","SPARKLE","STADIUM",
         "SUNRISE","TERRACE","TEXTILE","THERMAL","UNRAVEL","VIBRANT","VILLAGE","ZEALOUS"
       ];
-      var EMBED_THREE = [
-        "ACE","ACT","ADD","AID","AIR","ALE","AND","ANT","ANY","APE","ARE","ARM","ART","ASH","ASK",
-        "BAD","BAG","BAR","BAT","BED","BEE","BET","BIG","BIN","BIT","BOX","BOY","BUG","BUS","BUT",
-        "CAB","CAN","CAR","CAT","COD","COG","COP","COT","COW","CRY","CUP","CUT","DAD","DAY","DEW",
-        "DID","DIG","DOG","DOT","DRY","EAR","EAT","EGG","ELF","END","ERA","EVE","EYE","FAN","FAR",
-        "FAT","FEW","FIG","FIN","FIT","FIX","FLY","FOE","FOG","FOR","FOX","FRY","FUR","GAS","GEL",
-        "GEM","GET","GIN","GOD","GOT","GUM","GUN","GYM","HAT","HEN","HER","HIP","HIT","HOG","HOP",
-        "HOT","HUG","ICE","INK","INN","ION","ITS","IVY","JAM","JAR","JET","JOB","JOY","JUG","KID",
-        "KIN","LAB","LAD","LAP","LAW","LAY","LED","LEG","LET","LID","LIE","LIP","LIT","LOG","LOT",
-        "LOW","MAD","MAN","MAP","MAT","MAY","MEN","MET","MID","MOM","MOP","MUD","MUG","NAP","NET",
-        "NEW","NIB","NIP","NOD","NOR","NOT","NOW","NUT","OAK","OAR","OAT","ODD","OFF","OIL","OLD",
-        "ONE","OPT","ORB","OUT","OWL","PAD","PAL","PAN","PAR","PAT","PAW","PAY","PEA","PEG","PEN",
-        "PEP","PET","PEW","PIG","PIN","PIT","POD","POP","POT","PRO","PRY","PUG","PUN","PUP","PUT",
-        "RAD","RAG","RAM","RAN","RAP","RAT","RAW","RAY","RED","RID","RIG","RIM","RIP","ROD","ROE",
-        "ROT","ROW","RUB","RUG","RUM","RUN","RYE","SAD","SAP","SAT","SAW","SAY","SEA","SEE","SEW",
-        "SHE","SHY","SIN","SIP","SIR","SIT","SKI","SKY","SOD","SON","SOW","SOY","SPA","SPY","SUB",
-        "SUE","SUM","SUN","SUP","TAB","TAG","TAN","TAP","TAR","TEA","TEN","THE","TIE","TIN","TIP",
-        "TOE","TOG","TON","TOO","TOP","TOW","TOY","TRY","TUB","TUG","URN","USE","VAN","VAT","VET",
-        "VOW","WAR","WAS","WAX","WAY","WEB","WED","WET","WHO","WHY","WIN","WIT","WOE","WOK","WON",
-        "WOO","WOW","WRY","YAK","YAM","YAP","YEA","YES","YET","YOU","ZAP","ZED","ZIP","ZOO"
-      ];
+      var TARGET_LEN = 7;
 
-      // ---------- Theme ----------
+      // Theme
       var THEME_KEY = "sevensolve_theme";
       var themeToggle = document.getElementById("themeToggle");
       var savedTheme = localStorage.getItem(THEME_KEY) || "light";
@@ -320,7 +318,7 @@
         localStorage.setItem(THEME_KEY, t);
       });
 
-      // ---------- Sounds (lazy) ----------
+      // Sounds (lazy)
       var audioCtx = null;
       var soundKey = "sevensolve_sound";
       var soundOn = localStorage.getItem(soundKey) !== "off";
@@ -363,14 +361,7 @@
         success: function(){ [660,830,990,1240].forEach(function(f,i){ setTimeout(function(){ chirp(f,f+40,120,"triangle",0.03); }, i*120); }); }
       };
 
-      // ---------- Data ----------
-      var WORDS = EMBED_WORDS; // no fetch
-      var TARGET_LEN = 7;
-      var ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-      var DIFFICULTY_CONFIG = { normal:{probes:5,hintCap:Infinity}, hard:{probes:4,hintCap:1} };
-      var THREE_LETTER_DICT = new Set(EMBED_THREE);
-
-      // ---------- State & helpers ----------
+      // State
       var state = {
         target: "",
         found: new Set(),
@@ -381,17 +372,18 @@
         finished: false,
         mode: "standard",
         difficulty: "normal",
-        validateProbes: true,
         usedInSlotsCounts: {},
         slots: Array(TARGET_LEN).fill(""),
         hintsUsed: 0,
         hintsCap: Infinity
       };
+
+      // Helpers
       function randomChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
       function letterCounts(word){ var m = {}; for (var i=0;i<word.length;i++){ var ch = word[i]; m[ch]=(m[ch]||0)+1; } return m; }
       function isAlpha(str){ return /^[A-Za-z]+$/.test(str); }
 
-      // ---------- DOM ----------
+      // DOM
       var historyEl = document.getElementById("history");
       var roundsLeftEl = document.getElementById("roundsLeft");
       var status3El = document.getElementById("status3");
@@ -407,7 +399,6 @@
       var notGuessedWrap = document.getElementById("notGuessedWrap");
       var modeSelect = document.getElementById("modeSelect");
       var difficultySelect = document.getElementById("difficultySelect");
-      var validateToggle = document.getElementById("validateToggle");
       var slotsEl = document.getElementById("slots");
       var hintBtn = document.getElementById("hintBtn");
       var hintsUsedEl = document.getElementById("hintsUsed");
@@ -416,6 +407,7 @@
       var closeOverlay = document.getElementById("closeOverlay");
       var playAgain = document.getElementById("playAgain");
       var modeNotice = document.getElementById("modeNotice");
+      var revealBtn = document.getElementById("reveal");
 
       function applyDifficulty(d){
         state.difficulty = d;
@@ -520,13 +512,13 @@
         historyEl.prepend(row);
       }
 
-      function validateProbeWord(g){ return !state.validateProbes || THREE_LETTER_DICT.has(g); }
+      // Probe validation: accept ANY A–Z 3-letter to avoid false "invalid" blocks.
+      function validateProbeWord(g){ return g.length === 3 && isAlpha(g); }
 
       function handleProbe(){
         if (state.finished) return;
         var g = (guess3El.value || "").trim().toUpperCase();
-        if (g.length !== 3 || !isAlpha(g)) { status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); return; }
-        if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>That’s not in the dictionary. Try another 3-letter word.</span>"; sfx.probeBad(); return; }
+        if (!validateProbeWord(g)) { status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); return; }
         var counts = letterCounts(state.target);
         var markers = [];
         for (var i=0;i<3;i++){
@@ -565,6 +557,8 @@
               if (e.key === "Backspace" && !e.target.value && idx>0){
                 var prev = slotsEl.children[idx-1].querySelector("input"); if (prev) prev.focus();
               }
+              if (e.key === "ArrowLeft" && idx>0){ var prev2 = slotsEl.children[idx-1].querySelector("input"); if (prev2) prev2.focus(); }
+              if (e.key === "ArrowRight" && idx<TARGET_LEN-1){ var next2 = slotsEl.children[idx+1].querySelector("input"); if (next2) next2.focus(); }
             });
             slot.appendChild(input);
             var line = document.createElement("div"); line.className = "line"; slot.appendChild(line);
@@ -615,8 +609,8 @@
       function shakeSlots(){ slotsEl.classList.add('shake'); setTimeout(function(){ slotsEl.classList.remove('shake'); }, 260); }
       function celebrate(){ overlay.classList.add('show'); sfx.success(); launchConfetti(document.querySelector('.app')); }
       function launchConfetti(root){
-        var colors = ["#f43f5e","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ec4899"];
-        for (var i=0;i<80;i++){
+        var colors = ["#5ef0ff","#b36bff","#46ffb6","#ffd166","#ff6b6b"];
+        for (var i=0;i<90;i++){
           var c = document.createElement('div'); c.className = 'confetti';
           c.style.left = (Math.random()*100) + '%';
           c.style.background = colors[Math.floor(Math.random()*colors.length)];
@@ -626,15 +620,20 @@
         }
       }
 
+      function checkSolved(){
+        if (currentGuess().length === TARGET_LEN && currentGuess() === state.target){
+          celebrate();
+        }
+      }
+
       // Events
       document.getElementById("newGame").addEventListener("click", function(){ startNewGame(); });
-      document.getElementById("reveal").addEventListener("click", reveal);
+      revealBtn.addEventListener("click", reveal);
       document.getElementById("submit3").addEventListener("click", handleProbe);
       document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key === "Enter") handleProbe(); });
       document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
       document.getElementById("playAgain").addEventListener("click", function(){ overlay.classList.remove('show'); startNewGame(); });
       document.getElementById("hintBtn").addEventListener("click", hint);
-      document.getElementById("validateToggle").addEventListener("change", function(e){ state.validateProbes = !!e.target.checked; });
       document.getElementById("modeSelect").addEventListener("change", function(e){
         state.mode = e.target.value;
         document.getElementById("circExample").textContent = state.mode === "standard" ? "2" : "";
@@ -645,10 +644,26 @@
         var val = e.target.value; applyDifficulty(val); startNewGame();
       });
 
+      // How-to modal
+      var howModal = document.getElementById("howtoModal");
+      var howBody  = document.getElementById("howtoBody");
+      var howPage = 0;
+      function renderHow(){
+        if (howPage === 0){
+          howBody.innerHTML = "<b>Probe Rounds (1–5):</b><br/>Enter 3-letter words to scout the target. Each letter gets feedback:<ul><li><b>Number in a circle</b> = letter exists in the target; the number shows how many total times (Standard mode).</li><li><b>Square with X</b> = that letter isn't in the target.</li></ul>Use these to build your letter set. Repeated letters matter!";
+        } else {
+          howBody.innerHTML = "<b>Round 6 (Solve):</b><br/>Type directly into the 7 slots. Focus auto-advances. Use <b>Hint</b> to place a correct letter at a random empty position. When your 7 letters exactly match the target, success triggers automatically. <b>Reveal</b> fills the answer if you give up.";
+        }
+      }
+      document.getElementById("howTo").addEventListener("click", function(){ howPage = 0; renderHow(); howModal.classList.add("show"); });
+      document.getElementById("howtoClose").addEventListener("click", function(){ howModal.classList.remove("show"); });
+      document.getElementById("howtoPrev").addEventListener("click", function(){ howPage = Math.max(0, howPage-1); renderHow(); });
+      document.getElementById("howtoNext").addEventListener("click", function(){ howPage = Math.min(1, howPage+1); renderHow(); });
+
       // Init
       applyDifficulty("normal");
       startNewGame();
-      document.getElementById("modeNotice").classList.toggle("hidden", modeSelect.value !== "insane");
+      document.getElementById("modeNotice").classList.toggle("hidden", document.getElementById("modeSelect").value !== "insane");
     })();
   </script>
 </body>
