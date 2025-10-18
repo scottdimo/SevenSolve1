@@ -52,12 +52,13 @@
     .row{ display:grid; grid-template-columns: 160px 1fr; gap:10px; align-items:center; margin-top:6px; }
     .row label{ color:var(--muted); font-size:14px; }
     input[type="text"]{
-      width:100%; padding:12px 12px; background:var(--tile); color:var(--ink);
+      width:100%; padding:12px 14px; background:var(--tile); color:var(--ink);
       border:1px solid var(--border); border-radius:10px; outline:none; font-size:18px;
-      letter-spacing:2px; text-transform:uppercase; transition: box-shadow .2s ease, transform .08s ease; box-shadow: var(--glow-soft);
+      letter-spacing:1px; text-transform:uppercase; transition: box-shadow .2s ease; box-shadow: var(--glow-soft);
       -webkit-text-fill-color: var(--ink);
+      text-align:left;
     }
-    input[type="text"]:focus{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); border-color:var(--accent); transform: translateY(-1px); }
+    input[type="text"]:focus{ box-shadow: 0 0 0 3px var(--ring) inset, var(--glow-soft); border-color:var(--accent); }
     .history{ display:grid; gap:8px; }
     .guess-item{ padding:10px 12px; background:var(--tile); border:1px solid var(--border); border-radius:10px; box-shadow: var(--glow-soft); }
     .guess-row{ display:flex; gap:10px; align-items:flex-end; }
@@ -134,7 +135,7 @@
       button { padding: 11px 12px; font-size: 14px; }
       .panel { padding: 12px; }
       .row { grid-template-columns: 120px 1fr; gap: 8px; }
-      input[type="text"] { font-size: 17px; letter-spacing: 1.5px; padding: 10px 10px; }
+      input[type="text"] { font-size: 17px; letter-spacing: 0.8px; padding: 10px 12px; }
       .letters .tile { width: 32px; height: 40px; }
       .ltr { width: 36px; height: 42px; }
       .slots { gap: 8px; }
@@ -414,6 +415,7 @@
     var howPrev=document.getElementById("howtoPrev"), howNext=document.getElementById("howtoNext"), howClose=document.getElementById("howtoClose");
     var howPage=0;
     var splash = document.getElementById("brandSplash");
+    function isGameActive(){ return !!state.target; }
 
     // Expose splash handlers as globals (fallback for inline onclick)
     window.splashStart = function(){ sessionStorage.setItem("heptix_splash_seen","1"); hideSplash(); startNewGame(); };
@@ -438,7 +440,7 @@
       status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
       status10El.textContent = "You can type in the slots at any time.";
       renderFound(); renderEliminated(); renderNotGuessed();
-      renderSlots(true); hintBtn.disabled=false;
+      renderSlots(false); hintBtn.disabled=false; try{ document.getElementById('guess3').focus(); }catch(_){}
     }
 
     function bumpTiles(container){ var tiles = container.querySelectorAll('.tile'); for (var i=0;i<tiles.length;i++){ (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); },110); })(tiles[i]); } }
@@ -581,7 +583,7 @@
 
         slot.appendChild(input); var line=document.createElement("div"); line.className="line"; slot.appendChild(line); slotsEl.appendChild(slot);
       })(i); }
-      if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.focus(); }
+      if (focusFirst){ var first=slotsEl.querySelector("input"); if(first) first.blur(); }
     }
 
     function clearSlots(){
@@ -722,7 +724,7 @@
       }
     }
     document.getElementById("howTo").addEventListener("click", function(){ howPage=0; renderHow(); howModal.classList.add("show"); });
-    document.getElementById("howtoClose").addEventListener("click", function(){ howModal.classList.remove("show"); });
+    document.getElementById("howtoClose").addEventListener("click", function(){ howModal.classList.remove("show"); if (!isGameActive()){ splash.style.display="flex"; splash.setAttribute("aria-hidden","false"); } });
     document.getElementById("howtoPrev").addEventListener("click", function(){ howPage=Math.max(0,howPage-1); renderHow(); });
     document.getElementById("howtoNext").addEventListener("click", function(){ howPage=Math.min(2,howPage+1); renderHow(); });
 
