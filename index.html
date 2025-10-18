@@ -130,14 +130,28 @@
 /* iOS Safari fix for first-glyph overhang in 3-letter input */
 #guess3{
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: 0.18ch;
-  text-indent: 0.22ch;            /* nudge first glyph right to avoid clipping on S/R/C */
-  padding-left: 18px;             /* extra left inset so the caret and glyph don't hit the border */
+  text-align: center;              /* center content to avoid left-edge glyph clipping */
+  letter-spacing: 0.12ch;
+  text-indent: 0.50ch;             /* stronger nudge for S/R/C */
+  padding-left: 22px;              /* more breathing room on the left */
   -webkit-appearance: none;
   overflow: visible;
+  direction: ltr;
+  font-variant-ligatures: none;
 }
 @supports (text-indent: 1cap){
-  #guess3{ text-indent: 0.16cap; } /* slightly better metric where supported */
+  #guess3{ text-indent: 0.35cap; }
+  #guess3{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: center;              /* center content to avoid left-edge glyph clipping */
+  letter-spacing: 0.12ch;
+  text-indent: 0.50ch;             /* stronger nudge for S/R/C */
+  padding-left: 22px;              /* more breathing room on the left */
+  -webkit-appearance: none;
+  overflow: visible;
+  direction: ltr;
+  font-variant-ligatures: none;
+} /* slightly better metric where supported */
 }
 
 
