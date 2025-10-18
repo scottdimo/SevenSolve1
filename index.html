@@ -24,13 +24,14 @@
       --success-bg:#10211B; --success-ink:#90FFE0; --notice-bg:#0F1426; --notice-ink:#DDE9FF;
     }
     *{box-sizing:border-box}
+    html,body{overflow-x:hidden;}
     body{-webkit-text-size-adjust:100%;
       margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background: radial-gradient(1000px 600px at 50% -8%, var(--tile-alt) 0%, var(--bg) 60%);
       color:var(--ink); min-height:100vh; display:grid; place-items:start center; padding:20px;
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
-    .app{ width:100%; max-width:980px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow: var(--glow); position:relative; overflow:hidden; z-index:1; }
+    .app{ width:100%; max-width:980px; background:var(--panel); overflow-x:hidden; border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow: var(--glow); position:relative; overflow:hidden; z-index:1; }
 
     header{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
     h1{ margin:0; font-size:24px; letter-spacing:.3px; display:flex; gap:10px; align-items:center; font-weight:800; text-shadow: var(--glow-soft); }
@@ -177,6 +178,12 @@
     }
 
 
+    
+    .probeRow{ display:flex; gap:10px; align-items:center; width:100%; flex-wrap: wrap; }
+    .probeRow #submit3{ flex: 0 0 auto; }
+    .probeRow .probeSlots{ flex: 0 1 auto; }
+
+
     /* Small-screen polish */
     @media (max-width: 420px){
       header { gap: 6px; }
@@ -185,7 +192,7 @@
       .toggle, .group, .ghost { padding: 7px 9px; font-size: 12px; }
       button { padding: 11px 12px; font-size: 14px; }
       .panel { padding: 12px; }
-      .row { grid-template-columns: 120px 1fr; gap: 8px; }
+      .row { grid-template-columns: 100px 1fr; gap: 8px; }
       input[type="text"] { font-size: 17px; letter-spacing: 0.8px; padding: 10px 12px; }
       .letters .tile { width: 32px; height: 40px; }
       .ltr { width: 36px; height: 42px; }
@@ -196,7 +203,15 @@
       .logo-hero .seven { font-size: 46px; }
       .brand-actions { gap: 8px; }
     }
-  </style>
+  
+    @media (max-width: 360px){
+      .controls{ gap:6px; }
+      header{ justify-content:center; }
+      .row { grid-template-columns: 96px 1fr; }
+      .brand-card{ width: 94vw; }
+    }
+
+</style>
 </head>
 <body>
   <!-- Splash (first view) -->
@@ -249,7 +264,7 @@
         <h3 class="section-title">Rounds 1–5: probe with 3-letter words</h3>
         <div class="row">
           <label for="guess3">3-letter guess</label>
-          <div style="display:flex; gap:10px; align-items:center; width:100%;">
+          <div class="probeRow" style="display:flex; gap:10px; align-items:center; width:100%;">
             <div id="probeSlots" class="probeSlots" role="group" aria-label="3-letter probe">
               <div class="mini"><input id="probeA" maxlength="1" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
               <div class="mini"><input id="probeB" maxlength="1" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
