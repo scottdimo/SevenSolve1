@@ -155,6 +155,28 @@
 }
 
 
+    
+    /* Probe mini slots (Safari-safe) */
+    .probeSlots{ display:flex; gap:10px; }
+    .probeSlots .mini{ position:relative; width:48px; }
+    .probeSlots .mini input{
+      width:100%; background:transparent; color:var(--ink); border:none; outline:none; text-align:center;
+      font-weight:900; text-transform:uppercase; letter-spacing:.04em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      caret-color: var(--accent);
+      -webkit-appearance:none; appearance:none;
+      -webkit-text-fill-color: var(--ink);
+      font-size: 28px; line-height: 1.1; padding: 2px 0 6px;
+    }
+    .probeSlots .mini::after{
+      content:""; position:absolute; left:4px; right:4px; bottom:2px; height:2px; background:var(--ink); opacity:.3; border-radius:2px;
+    }
+    @media (max-width: 420px){
+      .probeSlots .mini{ width:44px; }
+      .probeSlots .mini input{ font-size: 24px; }
+    }
+
+
     /* Small-screen polish */
     @media (max-width: 420px){
       header { gap: 6px; }
@@ -227,8 +249,12 @@
         <h3 class="section-title">Rounds 1–5: probe with 3-letter words</h3>
         <div class="row">
           <label for="guess3">3-letter guess</label>
-          <div style="display:flex; gap:8px; width:100%;">
-            <input id="guess3" type="text" maxlength="3" placeholder="e.g., CAT" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+          <div style="display:flex; gap:10px; align-items:center; width:100%;">
+            <div id="probeSlots" class="probeSlots" role="group" aria-label="3-letter probe">
+              <div class="mini"><input id="probeA" maxlength="1" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
+              <div class="mini"><input id="probeB" maxlength="1" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
+              <div class="mini"><input id="probeC" maxlength="1" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
+            </div>
             <button class="primary" id="submit3" type="button">Submit</button>
           </div>
         </div>
@@ -424,11 +450,56 @@
     var foundCountEl = document.getElementById("foundCount");
     var eliminatedLettersEl = document.getElementById("eliminatedLetters");
     var notGuessedLettersEl = document.getElementById("notGuessedLetters");
-    var guess3El = document.getElementById("guess3");
+    var probeA=document.getElementById('probeA'), probeB=document.getElementById('probeB'), probeC=document.getElementById('probeC');
+    var probeInputs=[probeA,probeB,probeC];
     var foundWrap = document.getElementById("foundWrap");
     var eliminatedWrap = document.getElementById("eliminatedWrap");
     var notGuessedWrap = document.getElementById("notGuessedWrap");
     var slotsEl = document.getElementById("slots");
+
+    function getProbeGuess(){
+      return (probeA.value+probeB.value+probeC.value).toUpperCase().replace(/[^A-Z]/g,'');
+    }
+    function clearProbe(){ probeInputs.forEach(function(ip){ ip.value=''; }); }
+    function focusProbeFirst(){ try{ probeA.focus(); }catch(_){ } }
+    // Wire probe inputs: auto-advance, backspace across, paste distribution
+    probeInputs.forEach(function(ip, idx){
+      var onPlace = function(ch){
+        ip.value = ch;
+        // move to next input if exists
+        if (idx < 2){ var nxt = probeInputs[idx+1]; if (nxt) nxt.focus(); }
+      };
+      ip.addEventListener('input', function(e){
+        var v=(e.target.value||'').toUpperCase().replace(/[^A-Z]/g,'');
+        if (!v){ return; }
+        onPlace(v[0]);
+      });
+      ip.addEventListener('keydown', function(e){
+        if (e.key==='Backspace'){
+          if (!ip.value && idx>0){ probeInputs[idx-1].focus(); probeInputs[idx-1].value=''; }
+          return;
+        }
+        if (/^[a-zA-Z]$/.test(e.key)){
+          e.preventDefault();
+          onPlace(e.key.toUpperCase());
+        }
+        if (e.key==='ArrowLeft' && idx>0){ probeInputs[idx-1].focus(); }
+        if (e.key==='ArrowRight' && idx<2){ probeInputs[idx+1].focus(); }
+        if (e.key==='Enter'){ handleProbe(); }
+      });
+      ip.addEventListener('paste', function(e){
+        var text=(e.clipboardData||window.clipboardData).getData('text')||'';
+        text=text.toUpperCase().replace(/[^A-Z]/g,'');
+        if (!text) return;
+        e.preventDefault();
+        for (var i=0;i<text.length && (idx+i)<3;i++){ probeInputs[idx+i].value=text[i]; }
+        var nextIdx=Math.min(idx+text.length,2); probeInputs[nextIdx].focus();
+      });
+      // Touch tap focus
+      ip.addEventListener('touchstart', function(){ ip.focus(); }, {passive:true});
+      ip.setAttribute('tabindex','0');
+    });
+
     var hintBtn = document.getElementById("hintBtn");
     var hintsUsedEl = document.getElementById("hintsUsed");
     var hintsCapEl = document.getElementById("hintsCap");
@@ -469,7 +540,7 @@
       status3El.innerHTML = "You have <b id='roundsLeft'>" + (state.maxProbeRounds - state.roundsUsed) + "</b> probe rounds.";
       status10El.textContent = "You can type in the slots at any time.";
       renderFound(); renderEliminated(); renderNotGuessed();
-      renderSlots(false); hintBtn.disabled=false; try{ document.getElementById('guess3').focus(); }catch(_){}
+      renderSlots(false); hintBtn.disabled=false; focusProbeFirst();
     }
 
     function bumpTiles(container){ var tiles = container.querySelectorAll('.tile'); for (var i=0;i<tiles.length;i++){ (function(t){ t.classList.add('bump'); setTimeout(function(){ t.classList.remove('bump'); },110); })(tiles[i]); } }
@@ -521,8 +592,8 @@
 
     function handleProbe(){
       if (state.finished) return;
-      var g=(guess3El.value||"").trim().toUpperCase();
-      if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); guess3El.focus(); return; }
+      var g=getProbeGuess();
+      if (!validateProbeWord(g)){ status3El.innerHTML = "<span class='warning'>Enter a valid 3-letter word (A–Z only).</span>"; sfx.probeBad(); focusProbeFirst(); return; }
       var counts = letterCounts(state.target); var markers=[];
       for (var i=0;i<3;i++){ var ch=g[i]; state.guessed.add(ch);
         if (state.target.indexOf(ch)!==-1){ markers.push({in:true,count:counts[ch]||1}); state.found.add(ch); state.eliminated.delete(ch); sfx.probeGood(); }
@@ -530,7 +601,7 @@
       addHistoryRow(g,markers); renderFound(); renderEliminated(); renderNotGuessed();
       state.roundsUsed += 1; var left=state.maxProbeRounds - state.roundsUsed;
       roundsLeftEl.textContent = left; status3El.innerHTML = left>0? "You have <b>"+left+"</b> probe rounds left." : "Probe phase complete.";
-      guess3El.value=""; guess3El.focus();
+      clearProbe(); focusProbeFirst();
     }
 
     function focusNextEmpty(fromIdx){
@@ -798,7 +869,7 @@
       // Header buttons
       document.getElementById("newGame").addEventListener("click", startNewGame);
       document.getElementById("submit3").addEventListener("click", function(e){ e.preventDefault(); handleProbe(); });
-      document.getElementById("guess3").addEventListener("keydown", function(e){ if (e.key==="Enter") handleProbe(); });
+      probeC.addEventListener("keydown", function(e){ if (e.key==="Enter") handleProbe(); });
       document.getElementById("reveal").addEventListener("click", reveal);
       document.getElementById("submitSolve").addEventListener("click", submitSolve);
       document.getElementById("closeOverlay").addEventListener("click", function(){ overlay.classList.remove('show'); });
