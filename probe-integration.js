@@ -1,12 +1,12 @@
 
 (function(){
-  if (window.__HeptixProbeIntegrated) return;
-  window.__HeptixProbeIntegrated = true;
+  if (window.__HeptixProbeIntegratedV8) return;
+  window.__HeptixProbeIntegratedV8 = true;
 
   function $(q,root){ return (root||document).querySelector(q); }
   function $all(q,root){ return Array.from((root||document).querySelectorAll(q)); }
 
-  // CSS (scoped)
+  // CSS scoped to our mount only
   var css = `
     #heptixProbeMount{ border:1px solid rgba(26,115,232,.18); border-radius:12px; padding:12px; background:#FAFDFF; margin:12px 0; }
     #heptixProbeMount h3{ margin:0 0 8px 0; font-size:14px; text-transform:uppercase; letter-spacing:.12em; color:#52607A; }
@@ -21,7 +21,7 @@
       font-weight:900; text-transform:uppercase; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size:28px; padding:2px 0 6px; -webkit-appearance:none;
     }
-    .hx-mini::after{ content:""; position:absolute; left:4px; right:4px; bottom:2px; height:2px; background:#0D1A2B; opacity:.3; border-radius:2px; }
+    .hx-mini::after{ content:""; position:absolute; left:4px; right:4px; bottom:2px; height:2px; background:currentColor; opacity:.3; border-radius:2px; }
     .hx-ltrTile{ width:48px; height:44px; display:grid; place-items:center; border:1px solid rgba(26,115,232,.18); border-radius:8px; font-weight:900; background:#fff; }
     .hx-markers{ display:grid; grid-template-columns: repeat(3, 48px); column-gap:10px; align-items:center; justify-content:start; min-height:20px; }
     .hx-markerCell{ width:48px; display:grid; place-items:center; }
@@ -43,7 +43,7 @@
     .hx-rowTitle{ color:#52607A; font-size:12px; margin:6px 0 4px; }
     .hx-tiles{ display:flex; gap:6px; flex-wrap:wrap; }
     .hx-tile{ width:32px; height:40px; display:grid; place-items:center; border:1px solid rgba(26,115,232,.18); border-radius:8px; background:#fff; font-weight:800; }
-    .hx-tile.dim{ opacity:.5; }
+    .hx-tile.dim{ opacity:.55; }
     .hx-tile.bad{ color:#EF4444; border-color:#EF4444; }
   `;
   var style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
@@ -59,18 +59,7 @@
     return $('.app') || document.body.firstElementChild || document.body;
   }
 
-  function hideOldProbe(){
-    var ids = ['probePanel','probe-area','rounds1to5','rounds15','probe'];
-    for (var i=0;i<ids.length;i++){ var el = document.getElementById(ids[i]); if (el){ el.style.display='none'; return; } }
-    var hs = $all('h2,h3,h4');
-    for (var j=0;j<hs.length;j++){
-      var t = (hs[j].textContent||'').toLowerCase();
-      if (t.indexOf('rounds 1') !== -1 && t.indexOf('5') !== -1){
-        var sec = hs[j].closest('section'); if (sec){ sec.style.display='none'; return; }
-      }
-    }
-  }
-
+  // Mount just above Round 6 (no hiding of existing UI)
   var mount = document.createElement('section'); mount.id = 'heptixProbeMount'; mount.setAttribute('aria-label','Rounds 1–5');
   mount.innerHTML = `
     <h3>Rounds 1–5 – Probe Phase</h3>
@@ -82,13 +71,9 @@
     <div id="heptixStatus3"></div>
     <div id="heptixAlphabet" aria-label="Alphabet"></div>
   `;
-
   var anchor = findRound6Anchor();
   anchor.parentNode.insertBefore(mount, anchor);
-  hideOldProbe();
 
-  var MAX_PROBES = 5;
-  var TARGET = null; // resolved lazily
   var roundsUsed = 0;
   var guessed = new Set(), found=new Set(), eliminated=new Set();
 
@@ -100,15 +85,28 @@
   function A(){ return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); }
   function letterCounts(w){ var m={}; for (var i=0;i<w.length;i++){ var c=w[i]; m[c]=(m[c]||0)+1; } return m; }
 
-  // ---------- TARGET resolution ----------
+  // Target resolution
+  var TARGET = null;
+  function is7(w){ return typeof w==='string' && /^[A-Za-z]{7}$/.test(w); }
   function resolveTarget(){
     var cand = null;
-    try { if (window.Heptix && window.Heptix.target) cand = String(window.Heptix.target); } catch(_){}
+    try { if (window.Heptix && typeof Heptix.getTarget === 'function') cand = Heptix.getTarget(); } catch(_){}
+    try { if (!cand && window.Heptix && Heptix.target) cand = Heptix.target; } catch(_){}
     if (!cand && typeof window.HEPTIX_TARGET === 'string') cand = window.HEPTIX_TARGET;
     if (!cand && typeof window.targetWord === 'string') cand = window.targetWord;
     if (!cand && typeof window.currentWord === 'string') cand = window.currentWord;
     if (!cand && typeof window.TARGET === 'string') cand = window.TARGET;
-    // Infer from filled slots (e.g., after Reveal)
+    // data attributes
+    var n = document.body.getAttribute('data-target') || (anchor && anchor.getAttribute('data-target'));
+    if (!cand && is7(n)) cand = n;
+    // localStorage common keys
+    if (!cand){
+      try{
+        var keys = ['heptix_target','HeptixTarget','targetWord','currentWord','TARGET'];
+        for (var i=0;i<keys.length;i++){ var v = localStorage.getItem(keys[i]); if (is7(v)){ cand = v; break; } }
+      }catch(_){}
+    }
+    // infer from slots (after Reveal)
     if (!cand){
       var slots = $all('#slots input, .slots input');
       if (slots.length===7){
@@ -116,13 +114,16 @@
         if (/^[A-Z]{7}$/.test(tmp)) cand = tmp;
       }
     }
-    if (!cand) cand = "UNRAVEL"; // fallback
-    cand = cand.toUpperCase();
-    TARGET = cand;
-    return cand;
+    if (!is7(cand)) cand = null;
+    if (cand) TARGET = cand.toUpperCase();
+    return TARGET;
   }
 
-  // ---------- Round 6 HUD ----------
+  // Mutate observer to re-resolve on DOM changes (e.g., new game)
+  var mo = new MutationObserver(function(){ resolveTarget(); });
+  mo.observe(document.documentElement, {subtree:true, childList:true, attributes:true, characterData:false});
+
+  // Round 6 HUD
   function ensureR6Hud(){
     var slots = $('#slots') || $('.slots');
     if (!slots) return null;
@@ -150,7 +151,7 @@
     var elimBox = $('#hxElim'), remBox = $('#hxRemain');
 
     var tgt = resolveTarget();
-    var counts = letterCounts(tgt);
+    var counts = tgt ? letterCounts(tgt) : {};
     var foundArr = Array.from(found).sort();
     var tiles = [];
     foundArr.forEach(function(ch){
@@ -176,30 +177,15 @@
         var ch = v[0];
         guessed.add(ch);
         var tgt = resolveTarget();
-        if (tgt.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
-        else { eliminated.add(ch); }
+        if (tgt && tgt.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
+        else if (tgt) { eliminated.add(ch); }
         renderR6Hud();
-      });
-      ip.addEventListener('keydown', function(e){
-        if (/^[a-zA-Z]$/.test(e.key)){
-          var ch = e.key.toUpperCase();
-          guessed.add(ch);
-          var tgt = resolveTarget();
-          if (tgt.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
-          else { eliminated.add(ch); }
-          setTimeout(renderR6Hud, 0);
-        }
-      });
+      }, {passive:true});
     });
   }
+  function refreshR6Wiring(){ ensureR6Hud(); wireR6Inputs(); renderR6Hud(); }
 
-  function refreshR6Wiring(){
-    ensureR6Hud();
-    wireR6Inputs();
-    renderR6Hud();
-  }
-
-  // ---------- Probe alphabet & rows ----------
+  // Probe alphabet & rows
   function renderAlphabet(){
     var frag = document.createDocumentFragment();
     A().forEach(function(ch){
@@ -219,16 +205,10 @@
     return {wrap:wrap, input:ip};
   }
 
+  function focusFirstProbe(){
+    var first = $('#heptixProbeHistory .hx-mini input'); if (first){ try{ first.focus(); }catch(_){}} 
+  }
   function focusFirstSolveSlot(){
-    var solve = $('#round6') || $('#solve') || $('#Solve') || (function(){ 
-      var hs = $all('h2,h3,h4'); 
-      for (var j=0;j<hs.length;j++){ 
-        var t=(hs[j].textContent||'').toLowerCase(); 
-        if (t.indexOf('round 6')!==-1 || t.indexOf('7-letter')!==-1) return hs[j].closest('section')||hs[j].parentElement; 
-      } 
-      return null; 
-    })();
-    if (solve) { try { solve.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){} }
     var inputs = $all('#slots input, .slots input, [data-solve] input');
     if (inputs.length){
       var target = inputs.find(function(ip){ return !ip.value; }) || inputs[0];
@@ -242,8 +222,9 @@
     if (window.Heptix && typeof Heptix.onProbeComplete === 'function'){
       try { Heptix.onProbeComplete(detail); } catch(e){ console.warn('Heptix.onProbeComplete error', e); }
     }
-    focusFirstSolveSlot();
+    try { $('#round6')?.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){}
     refreshR6Wiring();
+    focusFirstSolveSlot();
   }
 
   function appendActiveRow(){
@@ -259,14 +240,16 @@
     hist.appendChild(block);
 
     function submit(){
-      var tgt = resolveTarget();
+      var tgt = resolveTarget(); // always refresh
       var guess = (A1.input.value + B1.input.value + C1.input.value).toUpperCase().replace(/[^A-Z]/g,'');
       if (guess.length!==3){ status3.textContent="Enter a valid 3-letter word."; return; }
-      var counts = letterCounts(tgt), marks=[];
+      var counts = tgt ? letterCounts(tgt) : {};
+      var marks=[];
       for (var i=0;i<3;i++){
         var ch=guess[i]; guessed.add(ch);
-        if (tgt.indexOf(ch)!==-1){ marks.push({in:true,count:counts[ch]||1}); found.add(ch); eliminated.delete(ch); }
-        else { marks.push({in:false}); eliminated.add(ch); }
+        if (tgt && tgt.indexOf(ch)!==-1){ marks.push({in:true,count:counts[ch]||1}); found.add(ch); eliminated.delete(ch); }
+        else if (tgt){ marks.push({in:false}); eliminated.add(ch); }
+        else { marks.push({in:false}); } // if target unknown, don't eliminate
       }
       lettersLine.innerHTML='';
       for (var i=0;i<3;i++){ var t=document.createElement('div'); t.className='hx-ltrTile'; t.textContent=guess[i]; lettersLine.appendChild(t); }
@@ -290,18 +273,17 @@
     [A1,B1,C1].forEach(function(obj, idx){
       var ip=obj.input;
       function place(ch){ ip.value=ch; if (idx<2){ [A1,B1,C1][idx+1].input.focus(); } }
-      ip.addEventListener('input', function(){ var v=(ip.value||'').toUpperCase().replace(/[^A-Z]/g,''); if (!v) return; ip.value=v[0]; place(ip.value); });
+      ip.addEventListener('input', function(){ var v=(ip.value||'').toUpperCase().replace(/[^A-Z]/g,''); if (!v) return; ip.value=v[0]; place(ip.value); }, {passive:true});
       ip.addEventListener('keydown', function(e){ if (e.key==='Backspace'){ if (!ip.value && idx>0){ [A1,B1,C1][idx-1].input.focus(); [A1,B1,C1][idx-1].input.value=''; } return; } if (/^[a-zA-Z]$/.test(e.key)){ e.preventDefault(); place(e.key.toUpperCase()); } if (e.key==='Enter'){ submit(); } });
       ip.addEventListener('touchstart', function(){ ip.focus(); }, {passive:true});
     });
     btn.addEventListener('click', function(e){ e.preventDefault(); submit(); });
 
-    A1.input.focus();
+    // focus first cell of the new row
+    setTimeout(function(){ A1.input.focus(); }, 0);
   }
 
-  // ---------- New Game / Play Again hooks ----------
   function softReset(){
-    // reset our UI + sets, keep TARGET resolved freshly on next submit
     roundsUsed = 0; guessed.clear(); found.clear(); eliminated.clear();
     if (hist) hist.innerHTML = "";
     if (alpha) alpha.innerHTML = "";
@@ -309,40 +291,18 @@
     if (roundsLeftEl) roundsLeftEl.textContent = "5";
     appendActiveRow();
     renderAlphabet();
-    // focus first probe input
-    setTimeout(function(){
-      var first = $('#heptixProbeHistory .hx-mini input');
-      if (first) try{ first.focus(); }catch(_){}
-    }, 0);
-    // recompute HUD
     setTimeout(refreshR6Wiring, 0);
+    setTimeout(focusFirstProbe, 0);
   }
 
-  function hookNewGameButtons(){
-    document.addEventListener('click', function(e){
-      var el = e.target;
-      if (!el) return;
-      var text = (el.textContent || '').trim().toLowerCase();
-      var idok = ['newTop','btnStart','playAgain','play-again','newGame','new-game'].some(function(id){ return el.id === id; });
-      var textok = /^(new game|play again)$/.test(text);
-      if (idok || textok){
-        // try baseline handlers first
-        var handled = false;
-        try{
-          if (window.Heptix && typeof Heptix.startNewGame === 'function'){ Heptix.startNewGame(); handled = true; }
-          else if (window.Heptix && typeof Heptix.newGame === 'function'){ Heptix.newGame(); handled = true; }
-        }catch(_){}
-        // soft reset our probe UI regardless
-        softReset();
-        // fallback: hard reload if baseline didn't change target within a tick
-        setTimeout(function(){
-          var tgtBefore = TARGET;
-          var tgtAfter = resolveTarget();
-          if (tgtBefore === tgtAfter){ try{ location.reload(); }catch(_){ /* ignore */ } }
-        }, 150);
-      }
-    }, true);
-  }
+  // Public API so your own code can call it on “New Game”
+  window.HeptixProbe = window.HeptixProbe || {};
+  window.HeptixProbe.reset = softReset;
+  window.HeptixProbe.resolveTarget = resolveTarget;
+
+  // Listen for custom reset events
+  document.addEventListener('heptix:new-game', softReset);
+  document.addEventListener('game:reset', softReset);
 
   // Boot
   $('#heptixRoundsLeft').textContent = String(5);
@@ -350,7 +310,6 @@
   appendActiveRow();
   renderAlphabet();
   setTimeout(refreshR6Wiring, 0);
-  hookNewGameButtons();
-
-  try { console.log("[Heptix] Probe injected. Target:", resolveTarget()); } catch(_){}
+  setTimeout(focusFirstProbe, 0);
+  try { console.log("[Heptix] Probe injected V8. Target:", resolveTarget()); } catch(_){}
 })();
