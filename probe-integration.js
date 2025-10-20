@@ -38,6 +38,14 @@
       .hx-mini{ width:44px; }
       .hx-mini input{ font-size:24px; }
     }
+
+    /* Round 6 HUD */
+    #heptixR6Hud{ margin-top:10px; border-top:1px dashed rgba(26,115,232,.18); padding-top:8px; }
+    .hx-rowTitle{ color:#52607A; font-size:12px; margin:6px 0 4px; }
+    .hx-tiles{ display:flex; gap:6px; flex-wrap:wrap; }
+    .hx-tile{ width:32px; height:40px; display:grid; place-items:center; border:1px solid rgba(26,115,232,.18); border-radius:8px; background:#fff; font-weight:800; }
+    .hx-tile.dim{ opacity:.5; }
+    .hx-tile.bad{ color:#EF4444; border-color:#EF4444; }
   `;
   var style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
 
@@ -68,7 +76,7 @@
   mount.innerHTML = `
     <h3>Rounds 1–5 – Probe Phase</h3>
     <div id="heptixProbeHeader">
-      <div></div>
+      <div id="heptixPrompt">Submit 3-letter word</div>
       <div id="heptixRoundsLeftWrap">Rounds left: <b id="heptixRoundsLeft">5</b></div>
     </div>
     <div id="heptixProbeHistory"></div>
@@ -95,6 +103,88 @@
   function A(){ return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); }
   function letterCounts(w){ var m={}; for (var i=0;i<w.length;i++){ var c=w[i]; m[c]=(m[c]||0)+1; } return m; }
 
+  // ---------- Round 6 HUD injection ----------
+  function ensureR6Hud(){
+    // Find slots container
+    var slots = $('#slots') || $('.slots');
+    if (!slots) return null;
+    var hud = $('#heptixR6Hud');
+    if (!hud){
+      hud = document.createElement('div');
+      hud.id = 'heptixR6Hud';
+      hud.innerHTML = `
+        <div class="hx-rowTitle">Letters found so far (<span id="hxFoundCount">0</span>):</div>
+        <div id="hxFound" class="hx-tiles"></div>
+        <div class="hx-rowTitle">Used & missed:</div>
+        <div id="hxElim" class="hx-tiles"></div>
+        <div class="hx-rowTitle">Not yet guessed:</div>
+        <div id="hxRemain" class="hx-tiles"></div>
+      `;
+      // place AFTER the slots
+      if (slots.parentElement) slots.parentElement.insertBefore(hud, slots.nextSibling);
+      else slots.insertAdjacentElement('afterend', hud);
+    }
+    return hud;
+  }
+
+  function renderR6Hud(){
+    var hud = ensureR6Hud(); if (!hud) return;
+    var foundBox = $('#hxFound'), countBox = $('#hxFoundCount');
+    var elimBox = $('#hxElim'), remBox = $('#hxRemain');
+
+    // Found tiles: include repeats according to TARGET
+    var counts = letterCounts(TARGET);
+    var foundArr = Array.from(found).sort();
+    var tiles = [];
+    foundArr.forEach(function(ch){
+      var n = counts[ch] || 1;
+      for (var i=0;i<n;i++) tiles.push(ch);
+    });
+    foundBox.innerHTML = tiles.map(function(ch){ return '<div class="hx-tile">'+ch+'</div>'; }).join('');
+    countBox.textContent = String(tiles.length);
+
+    // Eliminated (red)
+    var elimArr = Array.from(eliminated).sort();
+    elimBox.innerHTML = elimArr.map(function(ch){ return '<div class="hx-tile bad">'+ch+'</div>'; }).join('');
+
+    // Remaining (gray/dim)
+    var remain = A().filter(function(ch){ return !guessed.has(ch); });
+    remBox.innerHTML = remain.map(function(ch){ return '<div class="hx-tile dim">'+ch+'</div>'; }).join('');
+  }
+
+  // Watch Round 6 inputs to keep sets up-to-date
+  function wireR6Inputs(){
+    var inputs = $all('#slots input, .slots input, [data-solve] input');
+    inputs.forEach(function(ip){
+      ip.addEventListener('input', function(){
+        var v = (ip.value||'').toUpperCase().replace(/[^A-Z]/g,'');
+        if (!v) { renderR6Hud(); return; }
+        var ch = v[0];
+        guessed.add(ch);
+        if (TARGET.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
+        else { eliminated.add(ch); }
+        renderR6Hud();
+      });
+      ip.addEventListener('keydown', function(e){
+        if (/^[a-zA-Z]$/.test(e.key)){
+          var ch = e.key.toUpperCase();
+          guessed.add(ch);
+          if (TARGET.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
+          else { eliminated.add(ch); }
+          // let the existing handler place the char; we just update HUD
+          setTimeout(renderR6Hud, 0);
+        }
+      });
+    });
+  }
+
+  function refreshR6Wiring(){
+    ensureR6Hud();
+    wireR6Inputs();
+    renderR6Hud();
+  }
+
+  // ---------- Probe alphabet & rows ----------
   function renderAlphabet(){
     var frag = document.createDocumentFragment();
     A().forEach(function(ch){
@@ -138,6 +228,7 @@
       try { Heptix.onProbeComplete(detail); } catch(e){ console.warn('Heptix.onProbeComplete error', e); }
     }
     focusFirstSolveSlot();
+    refreshR6Wiring();
   }
 
   function appendActiveRow(){
@@ -172,6 +263,7 @@
       roundsLeftEl.textContent = String(left);
       status3.textContent = left>0 ? ("You have " + left + " probe rounds left.") : "Probe phase complete.";
       renderAlphabet();
+      renderR6Hud();
       if (left>0){
         appendActiveRow();
       } else {
@@ -194,7 +286,10 @@
   // Boot
   $('#heptixRoundsLeft').textContent = String(5);
   $('#heptixStatus3').textContent = "";
-  renderAlphabet();
   appendActiveRow();
+  renderAlphabet();
+  // Round 6 HUD baseline wiring
+  setTimeout(refreshR6Wiring, 0);
+
   try { console.log("[Heptix] Probe injected. Target:", TARGET); } catch(_){}
 })();
