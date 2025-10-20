@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Heptix — Seven-letter Word Game</title>
+<meta name="theme-color" content="#0a84ff" />
+<style>
+  :root{
+    --bg:#ffffff; --fg:#0b1530; --muted:#5b6b87; --tile:#ffffff;
+    --brand:#0a84ff; --brand2:#1460f0; --accent:#10b981; --bad:#ef4444; --divider:rgba(26,115,232,.18);
+  }
+  [data-theme="dark"]{
+    --bg:#0c1220; --fg:#e8eefc; --muted:#a9b5cf; --tile:#121a2e;
+    --brand:#66b8ff; --brand2:#2d7dff; --accent:#34d399; --bad:#ff6b6b; --divider:rgba(102,184,255,.25);
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:16px;}
+  header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 12px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .logo{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff;font-weight:900;box-shadow:0 4px 18px rgba(0,0,0,.12), inset 0 0 0 2px rgba(255,255,255,.18)}
+  .brand h1{font-size:18px;margin:0}
+  .tag{font-size:12px;color:var(--muted);margin-left:2px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  button,.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(180deg,var(--brand),var(--brand2));color:#fff}
+  .btn.secondary{background:transparent;color:var(--brand);border:2px solid var(--brand)}
+  .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .dash{position:relative;width:48px}
+  .dash input{width:100%;border:none;background:transparent;outline:none;text-align:center;font-weight:900;text-transform:uppercase;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:28px;padding:2px 0 6px}
+  .dash::after{content:"";position:absolute;left:4px;right:4px;bottom:2px;height:2px;background:var(--fg);opacity:.25;border-radius:2px}
+  .tile{width:48px;height:44px;display:grid;place-items:center;border:1px solid var(--divider);border-radius:8px;background:var(--tile);font-weight:900}
+  .markers{display:grid;grid-template-columns:repeat(3,48px);column-gap:10px;align-items:center;justify-content:start;min-height:20px;margin-top:6px}
+  .marker{width:48px;display:grid;place-items:center}
+  .circ{width:18px;height:18px;border-radius:99px;border:2px solid var(--accent);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:800}
+  .x{width:18px;height:18px;background:var(--bad);border-radius:3px;position:relative}
+  .x::before,.x::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:2px;background:#fff;transform-origin:center}
+  .x::before{transform:translate(-50%,-50%) rotate(45deg)} .x::after{transform:translate(-50%,-50%) rotate(-45deg)}
+  .dot{width:8px;height:8px;border-radius:99px;background:#9aa3b2;opacity:.7}
+  .panel{border:1px solid var(--divider);border-radius:12px;background:var(--tile);padding:12px;margin:12px 0}
+  .panel h3{margin:0 0 8px 0;font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+  .alphabet{display:flex;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed var(--divider);margin-top:8px}
+  .abc{position:relative;width:32px;height:40px;border:1px solid var(--divider);border-radius:8px;display:grid;place-items:center;background:var(--tile);font-weight:800}
+  .abc.slash::after{content:"";position:absolute;top:50%;left:8%;right:8%;height:2px;background:var(--bad);transform:rotate(-24deg)}
+  .muted{color:var(--muted)}
+  .grid{display:grid;gap:10px}
+  .hudTitle{color:var(--muted);font-size:12px;margin:6px 0 4px}
+  .tiles{display:flex;gap:6px;flex-wrap:wrap}
+  .tile.bad{color:var(--bad);border-color:var(--bad)}
+  .tile.dim{opacity:.55}
+  .center{display:flex;justify-content:center}
+  .hidden{display:none}
+  .splash{display:grid;place-items:center;min-height:70dvh;text-align:center;gap:18px}
+  .splash .logo{width:76px;height:76px;border-radius:22px;font-size:30px}
+  .splash .title{font-weight:900;font-size:28px;margin:0}
+  .splash .tagline{color:var(--muted)}
+  .modalBack{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal{max-width:720px;width:100%;background:var(--bg);border:1px solid var(--divider);border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.24)}
+  .modal header{padding:12px 14px;border-bottom:1px solid var(--divider)}
+  .modal .content{padding:14px}
+  .modal .footer{padding:12px 14px;border-top:1px solid var(--divider);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .howimg{height:110px;border:1px dashed var(--divider);border-radius:10px;display:grid;place-items:center;color:var(--muted);font-size:12px}
+  .settings{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .pill{border:2px solid var(--divider);border-radius:999px;padding:6px 10px;color:var(--muted);background:var(--tile)}
+  .switch{display:inline-flex;align-items:center;gap:8px}
+  .switch input{accent-color:var(--brand)}
+  .tiny{font-size:11px;color:var(--muted);margin-top:6px}
+  @media (max-width:420px){
+    .dash{width:44px}
+    .dash input{font-size:24px}
+    .tile{width:44px}
+    .markers{grid-template-columns:repeat(3,44px)}
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="logo">7</div>
+      <div>
+        <h1>Heptix</h1>
+        <div class="tag">Seven letters. Five probes. One shot.</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn secondary" id="btnHow">How to play</button>
+      <button class="btn" id="btnNew">New Game</button>
+      <button class="btn secondary" id="btnTheme" title="Toggle theme">☀︎</button>
+    </div>
+  </header>
+
+  <section id="splash" class="splash">
+    <div class="logo">7</div>
+    <h2 class="title">Heptix</h2>
+    <div class="tagline">Seven letters. Five probes. One shot.</div>
+    <div class="settings">
+      <span class="pill">Difficulty:
+        <label class="switch"><input type="radio" name="diff" value="normal" checked> Normal (3 hints)</label>
+        <label class="switch"><input type="radio" name="diff" value="hard"> Hard (1 hint)</label>
+      </span>
+      <span class="pill"><label class="switch"><input type="checkbox" id="chkInsane"> Insane mode</label></span>
+    </div>
+    <div class="muted" id="insaneNote" style="display:none">Insane mode hides repeated-letter counts in probes.</div>
+
+    <div id="dictStatus" class="tiny">Loading dictionaries…</div>
+
+    <div class="row center">
+      <button class="btn" id="btnStart">New Game</button>
+      <button class="btn secondary" id="btnSplashHow">How to play</button>
+    </div>
+  </section>
+
+  <section id="probe" class="panel hidden" aria-label="Rounds 1–5">
+    <h3>Rounds 1–5 — Probe Phase</h3>
+    <div id="probeHeader" class="row" style="justify-content:space-between;color:var(--muted)">
+      <div><strong>Submit 3-letter word</strong></div>
+      <div>Rounds left: <strong id="roundsLeft">5</strong></div>
+    </div>
+    <div id="probeHistory" class="grid"></div>
+    <div id="probeStatus" class="muted"></div>
+    <div id="alphabet" class="alphabet" aria-label="Alphabet"></div>
+  </section>
+
+  <section id="solvePanel" class="panel hidden">
+    <h3>Round 6 — Solve the 7-letter word</h3>
+    <div id="slots" class="row" style="margin-bottom:6px"></div>
+    <div class="row" style="gap:8px;margin:6px 0 8px">
+      <button class="btn" id="btnSubmitSolve">Submit Guess</button>
+      <button class="btn secondary" id="btnHint">Hint</button>
+      <button class="btn secondary" id="btnReveal">Reveal</button>
+      <button class="btn secondary" id="btnPlayAgain">Play Again</button>
+    </div>
+
+    <div class="hudTitle">Letters found so far (<span id="foundCount">0</span>):</div>
+    <div id="foundTiles" class="tiles"></div>
+    <div class="hudTitle">Used &amp; missed:</div>
+    <div id="elimTiles" class="tiles"></div>
+    <div class="hudTitle">Not yet guessed:</div>
+    <div id="remainTiles" class="tiles"></div>
+  </section>
+
+  <div id="toast" class="panel hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:40;min-width:240px;text-align:center"></div>
+
+</div>
+
+<div id="howBack" class="modalBack">
+  <div class="modal">
+    <header>
+      <div class="brand">
+        <div class="logo">7</div>
+        <div>
+          <strong>How to Play</strong>
+          <div class="tag">Quick guide</div>
+        </div>
+      </div>
+    </header>
+    <div class="content">
+      <div id="howPage1">
+        <h4>Probe Phase (Rounds 1–5)</h4>
+        <p>Enter a valid 3-letter word. Each letter that appears in the hidden 7-letter word shows a green circle with the number of times it appears. Non-present letters show an X. <strong>Tip:</strong> Don’t reuse letters in early probes to maximize coverage.</p>
+        <div class="howimg">Probe example (screenshot-style)</div>
+      </div>
+      <div id="howPage2" class="hidden">
+        <h4>Round 6 (Solve)</h4>
+        <p>Use the 7 slots to try the full word. Typing auto-advances; backspace moves back. <em>Hint</em> reveals one correct letter in the correct position. “Submit Guess” checks your attempt. If you hit “Reveal,” the answer fills in.</p>
+        <div class="howimg">Solve example (screenshot-style)</div>
+      </div>
+      <div id="howPage3" class="hidden">
+        <h4>Modes &amp; Difficulty</h4>
+        <p><strong>Normal</strong> gives you 3 hints. <strong>Hard</strong> gives you 1 hint. <strong>Insane mode</strong> hides repeated-letter counts during probes.</p>
+        <div class="howimg">Modes UI example</div>
+      </div>
+    </div>
+    <div class="footer">
+      <div>
+        <button class="btn secondary" id="howPrev">Back</button>
+        <button class="btn secondary" id="howNext">Next</button>
+      </div>
+      <button class="btn" id="howClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="text/plain" id="WORDS3_DATA">
+THE
+AND
+FOR
+ARE
+YOU
+HIM
+HER
+ONE
+TWO
+SIX
+TEN
+SUN
+RUN
+COP
+SAY
+LET
+DIG
+HAT
+CAR
+BAR
+SEA
+AIR
+EAR
+ART
+ARC
+RAT
+TAR
+ANT
+EEL
+OWL
+INK
+ICE
+ACE
+ERA
+RIO
+LID
+</script>
+
+<script type="text/plain" id="WORDS7_DATA">
+HARVEST
+UNRAVEL
+ORCHARD
+CAPTURE
+DEVIATE
+EXPLORE
+PILOTED
+MYSTERY
+BALANCE
+FANTASY
+CHARMER
+DISCUSS
+</script>
+
+<script>
+const EXCLUDE_PLURALS = true;
+const WORDS3_URL = "words3_full.txt";
+const WORDS7_URL = "words7_common.txt";
+
+const $ = (q, r=document) => r.querySelector(q);
+const $$ = (q, r=document) => Array.from(r.querySelectorAll(q));
+const AZ = () => "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const parseWordBlock = (id, len=null) => {
+  const el = document.getElementById(id);
+  if (!el) return [];
+  return el.textContent.split(/\r?\n/)
+    .map(s => s.trim().toUpperCase())
+    .filter(s => s && /^[A-Z]+$/.test(s))
+    .filter(s => (len? s.length===len : true));
+};
+function uniq(arr){ return Array.from(new Set(arr)); }
+function letterCounts(word){ const m={}; for(const c of word) m[c]=(m[c]||0)+1; return m; }
+function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+let WORDS7 = parseWordBlock("WORDS7_DATA", 7);
+let WORDS3 = parseWordBlock("WORDS3_DATA", 3);
+let WORDS3_SET = new Set(WORDS3);
+
+async function loadExternalList(url, len){
+  try{
+    const res = await fetch(url, {cache:"no-store"});
+    if (!res.ok) throw new Error("not found");
+    const txt = await res.text();
+    return txt.split(/\r?\n/)
+      .map(s=>s.trim().toUpperCase())
+      .filter(s=>s && /^[A-Z]+$/.test(s))
+      .filter(s=> len? s.length===len : true);
+  }catch(e){ return null; }
+}
+
+async function loadDictionaries(){
+  const status = $("#dictStatus");
+  status.textContent = "Loading dictionaries…";
+
+  const [three, seven] = await Promise.all([
+    loadExternalList(WORDS3_URL, 3),
+    loadExternalList(WORDS7_URL, 7),
+  ]);
+
+  if (three && three.length>0){ WORDS3 = uniq(three); WORDS3_SET = new Set(WORDS3); }
+  if (seven && seven.length>0){
+    let w7 = uniq(seven);
+    if (EXCLUDE_PLURALS) w7 = w7.filter(w => !w.endsWith("S"));
+    WORDS7 = w7;
+  }
+
+  status.textContent = `Dictionaries: ${WORDS3.length.toLocaleString()} three-letter words, ${WORDS7.length.toLocaleString()} seven-letter targets loaded.`;
+}
+
+const elInsane = $("#chkInsane");
+const insaneNote = $("#insaneNote");
+const diffRadios = $$("input[name='diff']");
+let insane = false;
+let maxHints = 3;
+function readDifficulty(){
+  const v = (diffRadios.find(r=>r.checked)?.value)||"normal";
+  maxHints = (v === "hard") ? 1 : 3;
+}
+diffRadios.forEach(r=> r.addEventListener("change", readDifficulty));
+elInsane.addEventListener("change", ()=>{
+  insane = elInsane.checked;
+  insaneNote.style.display = insane ? "block" : "none";
+});
+
+let target = null, solved = false, roundsUsed = 0, guessed = new Set(), found = new Set(), eliminated = new Set();
+let slots = [], hintsUsed = 0;
+
+window.Heptix = window.Heptix || {};
+Object.defineProperty(window.Heptix, "target", {
+  get(){ return target; },
+  set(v){ target = (v||"").toUpperCase(); document.body.setAttribute("data-target", target); localStorage.setItem("heptix_target", target); }
+});
+
+const elUI = {
+  splash: $("#splash"),
+  btnStart: $("#btnStart"),
+  btnSplashHow: $("#btnSplashHow"),
+  btnNew: $("#btnNew"),
+  btnHow: $("#btnHow"),
+  btnTheme: $("#btnTheme"),
+  howBack: $("#howBack"),
+  howClose: $("#howClose"),
+  howPrev: $("#howPrev"),
+  howNext: $("#howNext"),
+  probe: $("#probe"),
+  roundsLeft: $("#roundsLeft"),
+  probeHistory: $("#probeHistory"),
+  probeStatus: $("#probeStatus"),
+  alphabet: $("#alphabet"),
+  solvePanel: $("#solvePanel"),
+  slots: $("#slots"),
+  btnSubmitSolve: $("#btnSubmitSolve"),
+  btnHint: $("#btnHint"),
+  btnReveal: $("#btnReveal"),
+  btnPlayAgain: $("#btnPlayAgain"),
+  foundCount: $("#foundCount"),
+  foundTiles: $("#foundTiles"),
+  elimTiles: $("#elimTiles"),
+  remainTiles: $("#remainTiles"),
+  toast: $("#toast"),
+  dictStatus: $("#dictStatus"),
+};
+
+function setTheme(next){
+  document.body.setAttribute("data-theme", next);
+  elUI.btnTheme.textContent = next==="dark" ? "🌙" : "☀︎";
+}
+elUI.btnTheme.addEventListener("click", ()=>{
+  const cur = document.body.getAttribute("data-theme") || "light";
+  setTheme(cur==="light" ? "dark" : "light");
+});
+
+let howPage = 1;
+function showHowPage(n){
+  howPage = Math.max(1, Math.min(3, n));
+  $("#howPage1").classList.toggle("hidden", howPage!==1);
+  $("#howPage2").classList.toggle("hidden", howPage!==2);
+  $("#howPage3").classList.toggle("hidden", howPage!==3);
+}
+function openHow(){ showHowPage(1); elUI.howBack.style.display="flex"; }
+function closeHow(){ elUI.howBack.style.display="none"; }
+$("#howPrev").addEventListener("click", ()=> showHowPage(howPage-1));
+$("#howNext").addEventListener("click", ()=> showHowPage(howPage+1));
+elUI.btnHow.addEventListener("click", openHow);
+elUI.btnSplashHow.addEventListener("click", openHow);
+elUI.howClose.addEventListener("click", closeHow);
+
+let audioCtx = null;
+function cheer(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    const freqs = [523,659,784,1046];
+    freqs.forEach((f,i)=>{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.frequency.value = f; o.type = "triangle";
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = now + i*0.06;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.12, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+0.30);
+      o.start(t); o.stop(t+0.32);
+    });
+  }catch(e){}
+}
+
+function showToast(msg, ms=1200){
+  elUI.toast.textContent = msg;
+  elUI.toast.classList.remove("hidden");
+  setTimeout(()=> elUI.toast.classList.add("hidden"), ms);
+}
+
+const AZs = AZ();
+function renderAlphabet(){
+  const frag = document.createDocumentFragment();
+  AZs.forEach(ch=>{
+    const d = document.createElement("div");
+    d.className = "abc" + (guessed.has(ch) ? " slash" : "");
+    d.textContent = ch;
+    frag.appendChild(d);
+  });
+  elUI.alphabet.innerHTML = "";
+  elUI.alphabet.appendChild(frag);
+}
+function renderSolveHud(){
+  const counts = target ? letterCounts(target) : {};
+  const foundArr = Array.from(found).sort();
+  const tiles = [];
+  foundArr.forEach(ch=>{
+    const n = counts[ch] || 1;
+    for (let i=0;i<n;i++) tiles.push(ch);
+  });
+  elUI.foundTiles.innerHTML = tiles.map(ch=>`<div class="tile">${ch}</div>`).join("");
+  elUI.foundCount.textContent = String(tiles.length);
+  const elimArr = Array.from(eliminated).sort();
+  elUI.elimTiles.innerHTML = elimArr.map(ch=>`<div class="tile bad">${ch}</div>`).join("");
+  const remain = AZs.filter(ch=>!guessed.has(ch));
+  elUI.remainTiles.innerHTML = remain.map(ch=>`<div class="tile dim">${ch}</div>`).join("");
+}
+
+function mkDash(){
+  const wrap = document.createElement("div"); wrap.className="dash";
+  const input = document.createElement("input"); input.maxLength=1; input.autocapitalize="characters"; input.spellcheck=false;
+  wrap.appendChild(input); return {wrap,input};
+}
+function addProbeRow(){
+  const row = document.createElement("div"); row.className="grid";
+  const letters = document.createElement("div"); letters.className="row";
+  const a = mkDash(), b = mkDash(), c = mkDash();
+  letters.appendChild(a.wrap); letters.appendChild(b.wrap); letters.appendChild(c.wrap);
+  const btn = document.createElement("button"); btn.className="btn"; btn.textContent="Submit";
+  letters.appendChild(btn);
+  const markers = document.createElement("div"); markers.className="markers";
+  row.appendChild(letters); row.appendChild(markers); elUI.probeHistory.appendChild(row);
+
+  function submitProbe(){
+    const guess = (a.input.value + b.input.value + c.input.value).toUpperCase().replace(/[^A-Z]/g,"");
+    if (guess.length!==3){ showToast("Enter a valid 3-letter word"); return; }
+    if (!WORDS3_SET.has(guess)){ showToast("Not in 3-letter list"); return; }
+
+    const counts = target ? letterCounts(target) : {};
+    const mark = [];
+    for (let i=0;i<3;i++){
+      const ch = guess[i]; guessed.add(ch);
+      if (target && target.includes(ch)){
+        mark.push({in:true,count:counts[ch]||1});
+        found.add(ch); eliminated.delete(ch);
+      } else if (target){
+        mark.push({in:false}); eliminated.add(ch);
+      } else {
+        mark.push({unknown:true});
+      }
+    }
+
+    letters.innerHTML = "";
+    for (let i=0;i<3;i++){
+      const t = document.createElement("div"); t.className="tile"; t.textContent = guess[i];
+      letters.appendChild(t);
+    }
+
+    markers.innerHTML = "";
+    for (let i=0;i<3;i++){
+      const cell = document.createElement("div"); cell.className="marker";
+      if (mark[i].unknown){ const dot = document.createElement("div"); dot.className="dot"; cell.appendChild(dot); }
+      else if (mark[i].in){
+        const circ = document.createElement("div"); circ.className="circ";
+        circ.textContent = insane ? "" : String(mark[i].count);
+        cell.appendChild(circ);
+      } else {
+        const x=document.createElement("div"); x.className="x"; cell.appendChild(x);
+      }
+      markers.appendChild(cell);
+    }
+
+    roundsUsed++;
+    const left = clamp(5-roundsUsed,0,5);
+    elUI.roundsLeft.textContent = String(left);
+    elUI.probeStatus.textContent = left>0 ? `You have ${left} probe rounds left.` : `Probe phase complete.`;
+    renderAlphabet(); renderSolveHud();
+
+    if (left>0){ addProbeRow(); } else { onProbesComplete(); }
+  }
+
+  btn.addEventListener("click", e=>{ e.preventDefault(); submitProbe(); });
+  [a,b,c].forEach((obj, idx)=>{
+    const ip = obj.input;
+    function place(ch){ ip.value = ch; if (idx<2) [a,b,c][idx+1].input.focus(); }
+    ip.addEventListener("input", ()=>{
+      const v = (ip.value||"").toUpperCase().replace(/[^A-Z]/g,"");
+      if (!v) return; ip.value = v[0]; place(ip.value);
+    }, {passive:true});
+    ip.addEventListener("keydown", (e)=>{
+      if (e.key==="Backspace"){ if (!ip.value && idx>0){ const prev=[a,b,c][idx-1].input; prev.focus(); prev.value=""; } return; }
+      if (/^[a-zA-Z]$/.test(e.key)){ e.preventDefault(); place(e.key.toUpperCase()); }
+      if (e.key==="Enter"){ submitProbe(); }
+    });
+    ip.addEventListener("touchstart", ()=>ip.focus(), {passive:true});
+  });
+
+  let t0 = performance.now();
+  (function loop(){ a.input.focus(); if (performance.now()-t0 < 800) requestAnimationFrame(loop); })();
+}
+
+function mkSolveSlots(){
+  elUI.slots.innerHTML = ""; slots = [];
+  for (let i=0;i<7;i++){
+    const d = document.createElement("div"); d.className="dash";
+    const ip = document.createElement("input"); ip.maxLength=1; ip.autocapitalize="characters"; ip.spellcheck=false;
+    d.appendChild(ip); elUI.slots.appendChild(d); slots.push(ip);
+  }
+  slots.forEach((ip, idx)=>{
+    function advance(){ if (idx<6) slots[idx+1].focus(); }
+    function back(){ if (idx>0){ slots[idx-1].focus(); slots[idx-1].value=""; } }
+    ip.addEventListener("input", ()=>{
+      const v = (ip.value||"").toUpperCase().replace(/[^A-Z]/g,"");
+      if (!v) return; ip.value = v[0]; advance();
+      const ch = ip.value;
+      guessed.add(ch);
+      if (target && target.includes(ch)){ found.add(ch); eliminated.delete(ch); } else if (target){ eliminated.add(ch); }
+      renderSolveHud();
+    }, {passive:true});
+    ip.addEventListener("keydown", (e)=>{
+      if (e.key==="Backspace"){ if (!ip.value) back(); return; }
+      if (/^[a-zA-Z]$/.test(e.key)){
+        e.preventDefault(); ip.value = e.key.toUpperCase(); advance();
+        const ch = ip.value;
+        guessed.add(ch);
+        if (target && target.includes(ch)){ found.add(ch); eliminated.delete(ch); } else if (target){ eliminated.add(ch); }
+        renderSolveHud();
+      }
+    });
+    ip.addEventListener("touchstart", ()=>ip.focus(), {passive:true});
+  });
+}
+function readSolveWord(){ return slots.map(ip=> (ip.value||"").toUpperCase()).join(""); }
+function fillSolveWord(w){ slots.forEach((ip,i)=> ip.value = w[i] || ""); }
+function clearSolveWord(){ slots.forEach(ip=> ip.value = ""); slots[0]?.focus(); }
+
+function submitSolve(){
+  const guess = readSolveWord();
+  if (guess.length !== 7 || !/^[A-Z]{7}$/.test(guess)){ showToast("Enter a 7-letter guess"); return; }
+  if (guess === target){
+    solved = true; cheer();
+    showToast("🎉 Correct! You solved it.", 1400);
+  } else {
+    for (const ch of new Set(guess.split(""))){
+      if (!found.has(ch) && target && !target.includes(ch)) eliminated.add(ch);
+      guessed.add(ch);
+    }
+    renderAlphabet(); renderSolveHud();
+    showToast("Not it — try again.", 1100);
+    clearSolveWord();
+  }
+}
+function reveal(){
+  fillSolveWord(target);
+  if (!solved){ showToast(`Better luck next time — ${target}`, 1600); }
+}
+function hint(){
+  const v = (Array.from(document.querySelectorAll('input[name="diff"]')).find(r=>r.checked)?.value)||"normal";
+  const maxHints = v==="hard" ? 1 : 3;
+  if (hintsUsed>=maxHints){ showToast("No hints left"); return; }
+  const emptyIdx = slots.findIndex(ip=>!ip.value);
+  if (emptyIdx===-1){ showToast("All filled"); return; }
+  slots[emptyIdx].value = target[emptyIdx];
+  hintsUsed++;
+  const ch = target[emptyIdx];
+  guessed.add(ch); found.add(ch); eliminated.delete(ch);
+  renderSolveHud();
+  const next = slots.find(ip=>!ip.value);
+  (next||slots[6]).focus();
+}
+
+function pickTargetAvoidingRecent(list, keep=10){
+  const key = "heptix_recent_targets";
+  let recent = [];
+  try{ recent = JSON.parse(localStorage.getItem(key)||"[]"); }catch(e){ recent=[]; }
+  const candidates = list.filter(w => !recent.includes(w));
+  const picked = (candidates.length ? choice(candidates) : choice(list));
+  recent.unshift(picked);
+  if (recent.length > keep) recent = recent.slice(0, keep);
+  localStorage.setItem(key, JSON.stringify(recent));
+  return picked;
+}
+function newGame(){
+  solved = false; roundsUsed = 0; hintsUsed = 0;
+  guessed.clear(); found.clear(); eliminated.clear();
+  const pick = pickTargetAvoidingRecent(WORDS7);
+  window.Heptix.target = pick;
+  elUI.splash.classList.add("hidden");
+  elUI.probe.classList.remove("hidden");
+  elUI.solvePanel.classList.remove("hidden");
+  elUI.roundsLeft.textContent = "5";
+  elUI.probeHistory.innerHTML = "";
+  elUI.probeStatus.textContent = "";
+  renderAlphabet(); addProbeRow(); mkSolveSlots(); renderSolveHud();
+}
+function onProbesComplete(){
+  elUI.solvePanel.scrollIntoView({behavior:"smooth", block:"start"});
+  const ip = slots.find(x=>!x.value) || slots[0];
+  ip?.focus();
+}
+elUI.btnStart.addEventListener("click", newGame);
+elUI.btnNew.addEventListener("click", newGame);
+elUI.btnPlayAgain.addEventListener("click", newGame);
+elUI.btnSubmitSolve.addEventListener("click", submitSolve);
+elUI.btnReveal.addEventListener("click", reveal);
+elUI.btnHint.addEventListener("click", hint);
+
+(async function init(){
+  setTheme("light");
+  // Load external dictionaries if present
+  async function loadExternalList(url, len){
+    try{
+      const res = await fetch(url, {cache:"no-store"});
+      if (!res.ok) throw new Error("not found");
+      const txt = await res.text();
+      return txt.split(/\r?\n/)
+        .map(s=>s.trim().toUpperCase())
+        .filter(s=>s && /^[A-Z]+$/.test(s))
+        .filter(s=> len? s.length===len : true);
+    }catch(e){ return null; }
+  }
+  const status = document.getElementById("dictStatus");
+  status.textContent = "Loading dictionaries…";
+  const [three, seven] = await Promise.all([
+    loadExternalList(WORDS3_URL, 3),
+    loadExternalList(WORDS7_URL, 7),
+  ]);
+  if (three && three.length>0){ const set3=new Set(three); WORDS3=[...set3]; WORDS3_SET=set3; }
+  if (seven && seven.length>0){
+    let w7=[...new Set(seven)];
+    if (EXCLUDE_PLURALS) w7=w7.filter(w=>!w.endsWith("S"));
+    WORDS7=w7;
+  }
+  status.textContent = `Dictionaries: ${WORDS3.length.toLocaleString()} three-letter, ${WORDS7.length.toLocaleString()} seven-letter.`;
+
+  elUI.splash.classList.remove("hidden");
+  elUI.probe.classList.add("hidden");
+  elUI.solvePanel.classList.add("hidden");
+})();
+</script>
+</body>
+</html>
