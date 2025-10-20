@@ -1,13 +1,12 @@
 
 (function(){
-  // --- Guard to avoid double-injection ---
   if (window.__HeptixProbeIntegrated) return;
   window.__HeptixProbeIntegrated = true;
 
   function $(q,root){ return (root||document).querySelector(q); }
   function $all(q,root){ return Array.from((root||document).querySelectorAll(q)); }
 
-  // 1) Inject minimal CSS (scoped with #heptixProbeMount to avoid collisions)
+  // CSS (scoped)
   var css = `
     #heptixProbeMount{ border:1px solid rgba(26,115,232,.18); border-radius:12px; padding:12px; background:#FAFDFF; margin:12px 0; }
     #heptixProbeMount h3{ margin:0 0 8px 0; font-size:14px; text-transform:uppercase; letter-spacing:.12em; color:#52607A; }
@@ -42,22 +41,17 @@
   `;
   var style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
 
-  // 2) Find insertion point: above Round 6 panel if possible
   function findRound6Anchor(){
-    // try id-based
-    var ids = ['round6','round-6','solve','solvePanel'];
+    var ids = ['round6','round-6','solve','solvePanel','Round6','Solve'];
     for (var i=0;i<ids.length;i++){ var el = document.getElementById(ids[i]); if (el) return el; }
-    // try heading text
     var hs = $all('h2,h3,h4');
     for (var j=0;j<hs.length;j++){
       var t = (hs[j].textContent||'').toLowerCase();
-      if (t.indexOf('round 6') !== -1) return hs[j].closest('section') || hs[j];
+      if (t.indexOf('round 6') !== -1 || t.indexOf('7-letter') !== -1) return hs[j].closest('section') || hs[j];
     }
-    // fallback: top of .app or body
     return $('.app') || document.body.firstElementChild || document.body;
   }
 
-  // 3) Hide the old Rounds 1–5 block (if we can spot it)
   function hideOldProbe(){
     var ids = ['probePanel','probe-area','rounds1to5','rounds15','probe'];
     for (var i=0;i<ids.length;i++){ var el = document.getElementById(ids[i]); if (el){ el.style.display='none'; return; } }
@@ -70,12 +64,11 @@
     }
   }
 
-  // 4) Create our mount
   var mount = document.createElement('section'); mount.id = 'heptixProbeMount'; mount.setAttribute('aria-label','Rounds 1–5');
   mount.innerHTML = `
-    <h3>Rounds 1–5: probe with 3-letter words</h3>
+    <h3>Rounds 1–5 – Probe Phase</h3>
     <div id="heptixProbeHeader">
-      <div>Three dashes + Submit. Results appear underneath. Alphabet below slashes used letters.</div>
+      <div></div>
       <div id="heptixRoundsLeftWrap">Rounds left: <b id="heptixRoundsLeft">5</b></div>
     </div>
     <div id="heptixProbeHistory"></div>
@@ -85,10 +78,8 @@
 
   var anchor = findRound6Anchor();
   anchor.parentNode.insertBefore(mount, anchor);
-
   hideOldProbe();
 
-  // 5) Logic (self-contained, does not touch Round 6)
   var MAX_PROBES = 5;
   var TARGET = (window.Heptix && Heptix.target) ? String(Heptix.target).toUpperCase()
               : (window.HEPTIX_TARGET || "UNRAVEL");
@@ -105,11 +96,15 @@
   function letterCounts(w){ var m={}; for (var i=0;i<w.length;i++){ var c=w[i]; m[c]=(m[c]||0)+1; } return m; }
 
   function renderAlphabet(){
-    var html = "";
+    var frag = document.createDocumentFragment();
     A().forEach(function(ch){
-      html += '<div class="hx-abc'+(guessed.has(ch)?' hx-slash':'')+'">'+ch+'</div>';
+      var div = document.createElement('div');
+      div.className = 'hx-abc' + (guessed.has(ch)?' hx-slash':'');
+      div.textContent = ch;
+      frag.appendChild(div);
     });
-    alpha.innerHTML = html;
+    alpha.innerHTML = '';
+    alpha.appendChild(frag);
   }
 
   function miniInput(){
@@ -117,6 +112,32 @@
     var ip=document.createElement('input'); ip.maxLength=1; ip.autocapitalize='characters'; ip.spellcheck=false;
     wrap.appendChild(ip);
     return {wrap:wrap, input:ip};
+  }
+
+  function focusFirstSolveSlot(){
+    var solve = $('#round6') || $('#solve') || $('#Solve') || (function(){ 
+      var hs = $all('h2,h3,h4'); 
+      for (var j=0;j<hs.length;j++){ 
+        var t=(hs[j].textContent||'').toLowerCase(); 
+        if (t.indexOf('round 6')!==-1 || t.indexOf('7-letter')!==-1) return hs[j].closest('section')||hs[j].parentElement; 
+      } 
+      return null; 
+    })();
+    if (solve) { try { solve.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){} }
+    var inputs = $all('#slots input, .slots input, [data-solve] input');
+    if (inputs.length){
+      var target = inputs.find(function(ip){ return !ip.value; }) || inputs[0];
+      try { target.focus(); } catch(_) {}
+    }
+  }
+
+  function dispatchComplete(){
+    var detail = { guessed: Array.from(guessed), found: Array.from(found), eliminated: Array.from(eliminated) };
+    try { document.dispatchEvent(new CustomEvent('heptix:probes-complete', { detail: detail })); } catch(_){}
+    if (window.Heptix && typeof Heptix.onProbeComplete === 'function'){
+      try { Heptix.onProbeComplete(detail); } catch(e){ console.warn('Heptix.onProbeComplete error', e); }
+    }
+    focusFirstSolveSlot();
   }
 
   function appendActiveRow(){
@@ -147,11 +168,15 @@
       markers.style.visibility='visible';
 
       roundsUsed += 1;
-      var left = MAX_PROBES - roundsUsed;
+      var left = 5 - roundsUsed;
       roundsLeftEl.textContent = String(left);
       status3.textContent = left>0 ? ("You have " + left + " probe rounds left.") : "Probe phase complete.";
       renderAlphabet();
-      if (left>0) appendActiveRow();
+      if (left>0){
+        appendActiveRow();
+      } else {
+        dispatchComplete();
+      }
     }
 
     [A1,B1,C1].forEach(function(obj, idx){
@@ -167,8 +192,8 @@
   }
 
   // Boot
-  roundsLeftEl.textContent = String(5);
-  status3.textContent = "";
+  $('#heptixRoundsLeft').textContent = String(5);
+  $('#heptixStatus3').textContent = "";
   renderAlphabet();
   appendActiveRow();
   try { console.log("[Heptix] Probe injected. Target:", TARGET); } catch(_){}
