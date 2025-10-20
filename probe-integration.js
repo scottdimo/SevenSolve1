@@ -38,7 +38,6 @@
       .hx-mini{ width:44px; }
       .hx-mini input{ font-size:24px; }
     }
-
     /* Round 6 HUD */
     #heptixR6Hud{ margin-top:10px; border-top:1px dashed rgba(26,115,232,.18); padding-top:8px; }
     .hx-rowTitle{ color:#52607A; font-size:12px; margin:6px 0 4px; }
@@ -89,9 +88,7 @@
   hideOldProbe();
 
   var MAX_PROBES = 5;
-  var TARGET = (window.Heptix && Heptix.target) ? String(Heptix.target).toUpperCase()
-              : (window.HEPTIX_TARGET || "UNRAVEL");
-
+  var TARGET = null; // resolved lazily
   var roundsUsed = 0;
   var guessed = new Set(), found=new Set(), eliminated=new Set();
 
@@ -103,9 +100,30 @@
   function A(){ return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); }
   function letterCounts(w){ var m={}; for (var i=0;i<w.length;i++){ var c=w[i]; m[c]=(m[c]||0)+1; } return m; }
 
-  // ---------- Round 6 HUD injection ----------
+  // ---------- TARGET resolution ----------
+  function resolveTarget(){
+    var cand = null;
+    try { if (window.Heptix && window.Heptix.target) cand = String(window.Heptix.target); } catch(_){}
+    if (!cand && typeof window.HEPTIX_TARGET === 'string') cand = window.HEPTIX_TARGET;
+    if (!cand && typeof window.targetWord === 'string') cand = window.targetWord;
+    if (!cand && typeof window.currentWord === 'string') cand = window.currentWord;
+    if (!cand && typeof window.TARGET === 'string') cand = window.TARGET;
+    // Infer from filled slots (e.g., after Reveal)
+    if (!cand){
+      var slots = $all('#slots input, .slots input');
+      if (slots.length===7){
+        var tmp = slots.map(function(ip){ return (ip.value||'').toUpperCase(); }).join('');
+        if (/^[A-Z]{7}$/.test(tmp)) cand = tmp;
+      }
+    }
+    if (!cand) cand = "UNRAVEL"; // fallback
+    cand = cand.toUpperCase();
+    TARGET = cand;
+    return cand;
+  }
+
+  // ---------- Round 6 HUD ----------
   function ensureR6Hud(){
-    // Find slots container
     var slots = $('#slots') || $('.slots');
     if (!slots) return null;
     var hud = $('#heptixR6Hud');
@@ -120,7 +138,6 @@
         <div class="hx-rowTitle">Not yet guessed:</div>
         <div id="hxRemain" class="hx-tiles"></div>
       `;
-      // place AFTER the slots
       if (slots.parentElement) slots.parentElement.insertBefore(hud, slots.nextSibling);
       else slots.insertAdjacentElement('afterend', hud);
     }
@@ -132,8 +149,8 @@
     var foundBox = $('#hxFound'), countBox = $('#hxFoundCount');
     var elimBox = $('#hxElim'), remBox = $('#hxRemain');
 
-    // Found tiles: include repeats according to TARGET
-    var counts = letterCounts(TARGET);
+    var tgt = resolveTarget();
+    var counts = letterCounts(tgt);
     var foundArr = Array.from(found).sort();
     var tiles = [];
     foundArr.forEach(function(ch){
@@ -143,16 +160,13 @@
     foundBox.innerHTML = tiles.map(function(ch){ return '<div class="hx-tile">'+ch+'</div>'; }).join('');
     countBox.textContent = String(tiles.length);
 
-    // Eliminated (red)
     var elimArr = Array.from(eliminated).sort();
     elimBox.innerHTML = elimArr.map(function(ch){ return '<div class="hx-tile bad">'+ch+'</div>'; }).join('');
 
-    // Remaining (gray/dim)
     var remain = A().filter(function(ch){ return !guessed.has(ch); });
     remBox.innerHTML = remain.map(function(ch){ return '<div class="hx-tile dim">'+ch+'</div>'; }).join('');
   }
 
-  // Watch Round 6 inputs to keep sets up-to-date
   function wireR6Inputs(){
     var inputs = $all('#slots input, .slots input, [data-solve] input');
     inputs.forEach(function(ip){
@@ -161,7 +175,8 @@
         if (!v) { renderR6Hud(); return; }
         var ch = v[0];
         guessed.add(ch);
-        if (TARGET.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
+        var tgt = resolveTarget();
+        if (tgt.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
         else { eliminated.add(ch); }
         renderR6Hud();
       });
@@ -169,9 +184,9 @@
         if (/^[a-zA-Z]$/.test(e.key)){
           var ch = e.key.toUpperCase();
           guessed.add(ch);
-          if (TARGET.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
+          var tgt = resolveTarget();
+          if (tgt.indexOf(ch) !== -1) { found.add(ch); eliminated.delete(ch); }
           else { eliminated.add(ch); }
-          // let the existing handler place the char; we just update HUD
           setTimeout(renderR6Hud, 0);
         }
       });
@@ -244,12 +259,13 @@
     hist.appendChild(block);
 
     function submit(){
+      var tgt = resolveTarget();
       var guess = (A1.input.value + B1.input.value + C1.input.value).toUpperCase().replace(/[^A-Z]/g,'');
       if (guess.length!==3){ status3.textContent="Enter a valid 3-letter word."; return; }
-      var counts = letterCounts(TARGET), marks=[];
+      var counts = letterCounts(tgt), marks=[];
       for (var i=0;i<3;i++){
         var ch=guess[i]; guessed.add(ch);
-        if (TARGET.indexOf(ch)!==-1){ marks.push({in:true,count:counts[ch]||1}); found.add(ch); eliminated.delete(ch); }
+        if (tgt.indexOf(ch)!==-1){ marks.push({in:true,count:counts[ch]||1}); found.add(ch); eliminated.delete(ch); }
         else { marks.push({in:false}); eliminated.add(ch); }
       }
       lettersLine.innerHTML='';
@@ -283,13 +299,58 @@
     A1.input.focus();
   }
 
+  // ---------- New Game / Play Again hooks ----------
+  function softReset(){
+    // reset our UI + sets, keep TARGET resolved freshly on next submit
+    roundsUsed = 0; guessed.clear(); found.clear(); eliminated.clear();
+    if (hist) hist.innerHTML = "";
+    if (alpha) alpha.innerHTML = "";
+    if (status3) status3.textContent = "";
+    if (roundsLeftEl) roundsLeftEl.textContent = "5";
+    appendActiveRow();
+    renderAlphabet();
+    // focus first probe input
+    setTimeout(function(){
+      var first = $('#heptixProbeHistory .hx-mini input');
+      if (first) try{ first.focus(); }catch(_){}
+    }, 0);
+    // recompute HUD
+    setTimeout(refreshR6Wiring, 0);
+  }
+
+  function hookNewGameButtons(){
+    document.addEventListener('click', function(e){
+      var el = e.target;
+      if (!el) return;
+      var text = (el.textContent || '').trim().toLowerCase();
+      var idok = ['newTop','btnStart','playAgain','play-again','newGame','new-game'].some(function(id){ return el.id === id; });
+      var textok = /^(new game|play again)$/.test(text);
+      if (idok || textok){
+        // try baseline handlers first
+        var handled = false;
+        try{
+          if (window.Heptix && typeof Heptix.startNewGame === 'function'){ Heptix.startNewGame(); handled = true; }
+          else if (window.Heptix && typeof Heptix.newGame === 'function'){ Heptix.newGame(); handled = true; }
+        }catch(_){}
+        // soft reset our probe UI regardless
+        softReset();
+        // fallback: hard reload if baseline didn't change target within a tick
+        setTimeout(function(){
+          var tgtBefore = TARGET;
+          var tgtAfter = resolveTarget();
+          if (tgtBefore === tgtAfter){ try{ location.reload(); }catch(_){ /* ignore */ } }
+        }, 150);
+      }
+    }, true);
+  }
+
   // Boot
   $('#heptixRoundsLeft').textContent = String(5);
   $('#heptixStatus3').textContent = "";
   appendActiveRow();
   renderAlphabet();
-  // Round 6 HUD baseline wiring
   setTimeout(refreshR6Wiring, 0);
+  hookNewGameButtons();
 
-  try { console.log("[Heptix] Probe injected. Target:", TARGET); } catch(_){}
+  try { console.log("[Heptix] Probe injected. Target:", resolveTarget()); } catch(_){}
 })();
