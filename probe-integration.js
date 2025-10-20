@@ -1,7 +1,7 @@
 
 (function(){
-  if (window.__HeptixProbeIntegratedV9) return;
-  window.__HeptixProbeIntegratedV9 = true;
+  if (window.__HeptixProbeIntegratedV10) return;
+  window.__HeptixProbeIntegratedV10 = true;
 
   function $(q,root){ return (root||document).querySelector(q); }
   function $all(q,root){ return Array.from((root||document).querySelectorAll(q)); }
@@ -29,6 +29,7 @@
     .hx-x{ width:18px; height:18px; background:#EF4444; border-radius:3px; position:relative; }
     .hx-x::before,.hx-x::after{ content:""; position:absolute; left:50%; top:50%; width:12px; height:2px; background:#fff; transform-origin:center; }
     .hx-x::before{ transform: translate(-50%,-50%) rotate(45deg);} .hx-x::after{ transform: translate(-50%,-50%) rotate(-45deg);}
+    .hx-dot{ width:8px; height:8px; border-radius:99px; background:#9AA3B2; opacity:.7; }
     #heptixAlphabet{ display:flex; gap:6px; flex-wrap:wrap; padding-top:8px; border-top:1px dashed rgba(26,115,232,.18); margin-top:8px; }
     .hx-abc{ position:relative; width:32px; height:40px; border:1px solid rgba(26,115,232,.18); border-radius:8px; display:grid; place-items:center; background:#fff; font-weight:800; }
     .hx-abc.hx-slash::after{ content:""; position:absolute; top:50%; left:8%; right:8%; height:2px; background:red; transform: rotate(-24deg); }
@@ -47,6 +48,9 @@
     .hx-tile.bad{ color:#EF4444; border-color:#EF4444; }
   `;
   var style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+  function $(q,root){ return (root||document).querySelector(q); }
+  function $all(q,root){ return Array.from((root||document).querySelectorAll(q)); }
 
   function findRound6Anchor(){
     var ids = ['round6','round-6','solve','solvePanel','Round6','Solve'];
@@ -74,7 +78,7 @@
   var anchor = findRound6Anchor();
   anchor.parentNode.insertBefore(mount, anchor);
 
-  // ---- SAFE de-duplication of *older* probe block (without touching dark mode/sounds) ----
+  // De-duplicate older probe UIs safely
   (function dedupeOldProbe(){
     try{
       var heads = $all('h2,h3,h4');
@@ -89,17 +93,7 @@
           }
         }
       });
-      var all = $all('label, div, p, span');
-      all.forEach(function(el){
-        var t = (el.textContent||'').trim().toLowerCase();
-        if (t === '3-letter guess' || t === '3 letter guess'){
-          if (!el.closest('#heptixProbeMount')){
-            var c = el.closest('section') || el.parentElement;
-            if (c && !c.closest('#heptixProbeMount')) c.style.display = 'none';
-          }
-        }
-      });
-    }catch(e){ console.warn('Probe dedupe warning:', e); }
+    }catch(e){}
   })();
 
   var roundsUsed = 0;
@@ -113,7 +107,7 @@
   function A(){ return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); }
   function letterCounts(w){ var m={}; for (var i=0;i<w.length;i++){ var c=w[i]; m[c]=(m[c]||0)+1; } return m; }
 
-  // Target resolution (same as V8)
+  // Target resolution
   var TARGET = null;
   function is7(w){ return typeof w==='string' && /^[A-Za-z]{7}$/.test(w); }
   function resolveTarget(){
@@ -144,6 +138,7 @@
     return TARGET;
   }
 
+  // Mutation observer to re-resolve on DOM changes
   var mo = new MutationObserver(function(){ resolveTarget(); });
   mo.observe(document.documentElement, {subtree:true, childList:true, attributes:true, characterData:false});
 
@@ -232,6 +227,13 @@
   function focusFirstProbe(){
     var first = $('#heptixProbeHistory .hx-mini input'); if (first){ try{ first.focus(); }catch(_){}} 
   }
+  function focusLoopProbe(ms){
+    var start = Date.now();
+    var t = setInterval(function(){
+      if (Date.now()-start > ms){ clearInterval(t); return; }
+      focusFirstProbe();
+    }, 100);
+  }
   function focusFirstSolveSlot(){
     var inputs = $all('#slots input, .slots input, [data-solve] input');
     if (inputs.length){
@@ -263,23 +265,45 @@
     block.appendChild(markers);
     hist.appendChild(block);
 
+    function markerNeutralRow(){
+      markers.innerHTML='';
+      for (var i=0;i<3;i++){
+        var cell = document.createElement('div'); cell.className='hx-markerCell';
+        var dot = document.createElement('div'); dot.className='hx-dot';
+        cell.appendChild(dot); markers.appendChild(cell);
+      }
+      markers.style.visibility='visible';
+    }
+
     function submit(){
       var tgt = resolveTarget(); // always refresh
       var guess = (A1.input.value + B1.input.value + C1.input.value).toUpperCase().replace(/[^A-Z]/g,'');
       if (guess.length!==3){ status3.textContent="Enter a valid 3-letter word."; return; }
+
       var counts = tgt ? letterCounts(tgt) : {};
       var marks=[];
       for (var i=0;i<3;i++){
         var ch=guess[i]; guessed.add(ch);
         if (tgt && tgt.indexOf(ch)!==-1){ marks.push({in:true,count:counts[ch]||1}); found.add(ch); eliminated.delete(ch); }
         else if (tgt){ marks.push({in:false}); eliminated.add(ch); }
-        else { marks.push({in:false}); } // if target unknown, don't eliminate
+        else { marks.push({unknown:true}); } // no false X's when target unknown
       }
+
       lettersLine.innerHTML='';
       for (var i=0;i<3;i++){ var t=document.createElement('div'); t.className='hx-ltrTile'; t.textContent=guess[i]; lettersLine.appendChild(t); }
-      markers.innerHTML='';
-      for (var i=0;i<3;i++){ var cell=document.createElement('div'); cell.className='hx-markerCell'; if (marks[i].in){ var c=document.createElement('div'); c.className='hx-circ'; c.textContent=marks[i].count; cell.appendChild(c);} else { var x=document.createElement('div'); x.className='hx-x'; cell.appendChild(x);} markers.appendChild(cell); }
-      markers.style.visibility='visible';
+
+      if (!tgt){
+        markerNeutralRow();
+      }else{
+        markers.innerHTML='';
+        for (var i=0;i<3;i++){
+          var cell=document.createElement('div'); cell.className='hx-markerCell';
+          if (marks[i].in){ var c=document.createElement('div'); c.className='hx-circ'; c.textContent=marks[i].count; cell.appendChild(c); }
+          else { var x=document.createElement('div'); x.className='hx-x'; cell.appendChild(x); }
+          markers.appendChild(cell);
+        }
+        markers.style.visibility='visible';
+      }
 
       roundsUsed += 1;
       var left = 5 - roundsUsed;
@@ -306,6 +330,18 @@
     setTimeout(function(){ A1.input.focus(); }, 0);
   }
 
+  function renderAlphabet(){
+    var frag = document.createDocumentFragment();
+    A().forEach(function(ch){
+      var div = document.createElement('div');
+      div.className = 'hx-abc' + (guessed.has(ch)?' hx-slash':'');
+      div.textContent = ch;
+      frag.appendChild(div);
+    });
+    alpha.innerHTML = '';
+    alpha.appendChild(frag);
+  }
+
   function softReset(){
     roundsUsed = 0; guessed.clear(); found.clear(); eliminated.clear();
     if (hist) hist.innerHTML = "";
@@ -316,14 +352,41 @@
     renderAlphabet();
     setTimeout(refreshR6Wiring, 0);
     setTimeout(function(){ var first = $('#heptixProbeHistory .hx-mini input'); if (first) try{ first.focus(); }catch(_){ } }, 0);
+    focusLoopProbe(1000);
   }
 
+  // Public API
   window.HeptixProbe = window.HeptixProbe || {};
   window.HeptixProbe.reset = softReset;
   window.HeptixProbe.resolveTarget = resolveTarget;
 
   document.addEventListener('heptix:new-game', softReset);
   document.addEventListener('game:reset', softReset);
+
+  // Round 6 HUD wiring
+  function ensureR6Hud(){ var slots = $('#slots') || $('.slots'); if (!slots) return null;
+    var hud = $('#heptixR6Hud'); if (!hud){ hud = document.createElement('div'); hud.id='heptixR6Hud'; hud.innerHTML = `
+      <div class="hx-rowTitle">Letters found so far (<span id="hxFoundCount">0</span>):</div>
+      <div id="hxFound" class="hx-tiles"></div>
+      <div class="hx-rowTitle">Used & missed:</div>
+      <div id="hxElim" class="hx-tiles"></div>
+      <div class="hx-rowTitle">Not yet guessed:</div>
+      <div id="hxRemain" class="hx-tiles"></div>
+    `; if (slots.parentElement) slots.parentElement.insertBefore(hud, slots.nextSibling); else slots.insertAdjacentElement('afterend', hud); }
+    return hud; }
+  function renderR6Hud(){ var hud=ensureR6Hud(); if(!hud) return;
+    var foundBox=$('#hxFound'), countBox=$('#hxFoundCount'), elimBox=$('#hxElim'), remBox=$('#hxRemain');
+    var tgt=resolveTarget(), counts=tgt?letterCounts(tgt):{};
+    var foundArr=Array.from(found).sort(), tiles=[]; foundArr.forEach(function(ch){ var n=counts[ch]||1; for(var i=0;i<n;i++) tiles.push(ch); });
+    foundBox.innerHTML=tiles.map(function(ch){return '<div class="hx-tile">'+ch+'</div>';}).join(''); countBox.textContent=String(tiles.length);
+    var elimArr=Array.from(eliminated).sort(); elimBox.innerHTML=elimArr.map(function(ch){return '<div class="hx-tile bad">'+ch+'</div>';}).join('');
+    var remain=A().filter(function(ch){return !guessed.has(ch);}); remBox.innerHTML=remain.map(function(ch){return '<div class="hx-tile dim">'+ch+'</div>';}).join('');
+  }
+  function wireR6Inputs(){ var inputs=$all('#slots input, .slots input, [data-solve] input'); inputs.forEach(function(ip){
+    ip.addEventListener('input', function(){ var v=(ip.value||'').toUpperCase().replace(/[^A-Z]/g,''); if(!v){renderR6Hud(); return;} var ch=v[0]; guessed.add(ch);
+      var tgt=resolveTarget(); if(tgt && tgt.indexOf(ch)!==-1){found.add(ch); eliminated.delete(ch);} else if (tgt){ eliminated.add(ch); } renderR6Hud(); }, {passive:true});
+  }); }
+  function refreshR6Wiring(){ ensureR6Hud(); wireR6Inputs(); renderR6Hud(); }
 
   // Boot
   $('#heptixRoundsLeft').textContent = String(5);
@@ -332,5 +395,8 @@
   renderAlphabet();
   setTimeout(refreshR6Wiring, 0);
   setTimeout(function(){ var f = $('#heptixProbeHistory .hx-mini input'); if (f) try{ f.focus(); }catch(_){ } }, 0);
-  try { console.log("[Heptix] Probe injected V9. Target:", resolveTarget()); } catch(_){}
+  // Focus loop to keep cursor in probe row briefly
+  setTimeout(function(){ focusLoopProbe(1200); }, 0);
+
+  try { console.log("[Heptix] Probe injected V10. Target:", resolveTarget()); } catch(_){}
 })();
